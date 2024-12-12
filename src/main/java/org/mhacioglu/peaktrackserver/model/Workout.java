@@ -24,6 +24,14 @@ public class Workout implements Serializable {
     @NotNull
     private String name;
 
+
+
+    @NotNull
+    private LocalDateTime start;
+
+    @NotNull
+    private int durationInMinutes;
+
     @NotNull
     @ManyToMany
     @JoinTable(
@@ -33,10 +41,8 @@ public class Workout implements Serializable {
     )
     private List<Exercise> exercises;
 
-    @NotNull
-    private LocalDateTime start;
+    @ManyToOne
+    private User user;
 
-    @NotNull
-    private int durationInMinutes;
 
 }
