@@ -27,9 +27,6 @@ public class User implements Serializable, UserDetails {
     private String username;
 
     @NotNull
-    @Size(min=6)
-    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#&()–[{}]:;',?/*~$^+=<>]).*$",
-            message = "Password must contain at least one uppercase letter, one lowercase letter, and one special character")
     private String password;
 
     @NotNull
@@ -45,6 +42,7 @@ public class User implements Serializable, UserDetails {
 
     @Min(10)
     @Max(80)
+    @NotNull
     private int age;
 
     @Enumerated(EnumType.STRING)
@@ -83,7 +81,7 @@ public class User implements Serializable, UserDetails {
         return true;
     }
 
-    private enum Gender {
+    public enum Gender {
         MALE, FEMALE, TRANSGENDER, INTERSEX
     }
 

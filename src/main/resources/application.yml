@@ -17,3 +17,8 @@ spring:
       mode: always
 server:
   port: 9090
+
+security:
+  jwt:
+    secret-key: 4875ee092fb6821c8c69d4fe872c77b798046020bcdbc85d00d5d370f21e469d
+    expiration-time: 3600000
