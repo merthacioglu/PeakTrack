@@ -7,4 +7,7 @@ import java.util.List;
 
 public interface WorkoutRepository extends CrudRepository<Workout, Long> {
     List<Workout> findAllByUserId(Long userId);
+
 }
+
+

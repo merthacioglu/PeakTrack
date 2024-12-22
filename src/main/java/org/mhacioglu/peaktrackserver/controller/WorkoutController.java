@@ -2,59 +2,57 @@ package org.mhacioglu.peaktrackserver.controller;
 
 import org.mhacioglu.peaktrackserver.model.User;
 import org.mhacioglu.peaktrackserver.model.Workout;
-import org.mhacioglu.peaktrackserver.repository.UserRepository;
-import org.mhacioglu.peaktrackserver.repository.WorkoutRepository;
+import org.mhacioglu.peaktrackserver.service.UserService;
+import org.mhacioglu.peaktrackserver.service.WorkoutService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @RestController
-@RequestMapping(path = "/api/workout")
+@RequestMapping( value = "/api/workout" )
 public class WorkoutController {
 
-    private final WorkoutRepository workoutRepository;
-    private final UserRepository userRepository;
+    private final WorkoutService workoutService;
+    private final UserService userService;
 
-    public WorkoutController(WorkoutRepository workoutRepository,
-                             UserRepository userRepository) {
-        this.workoutRepository = workoutRepository;
-        this.userRepository = userRepository;
+    public WorkoutController(UserService userService,
+                             WorkoutService workoutService) {
+        this.workoutService = workoutService;
+        this.userService = userService;
 
     }
 
-    @GetMapping("/getAll")
-    public List<Workout> all() {
-        List<Workout> workouts = new ArrayList<>();
-        workoutRepository.findAll().forEach(workouts::add);
-        return workouts;
+    @GetMapping(value = "/getAll")
+    public ResponseEntity<List<Workout>> all() {
+        User currentUser = userService.getCurrentUser();
+        return new ResponseEntity<>(workoutService.getAllWorkouts(currentUser), HttpStatus.OK);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Workout> one(@PathVariable long id) {
-        Optional<Workout> workout = workoutRepository.findById(id);
-        return workout.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+
+    @PostMapping(path = "/create", consumes = "application/json")
+    public ResponseEntity<Workout> create(@RequestBody Workout workout) {
+        User currentUser = userService.getCurrentUser();
+        Workout newWorkout = workoutService.addWorkout(workout, currentUser);
+        return new ResponseEntity<>(newWorkout, HttpStatus.CREATED);
     }
 
-    @GetMapping(("/user/{userId}"))
-    public ResponseEntity<List<Workout>> allByUserId(@PathVariable long userId) {
-        Optional<User> optionalUser = userRepository.findById(userId);
-        if(optionalUser.isEmpty()) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-
-        }
-        List<Workout> workouts = workoutRepository.findAllByUserId(userId);
-        return new ResponseEntity<>(workouts, HttpStatus.OK);
+    @DeleteMapping("/delete/{workoutId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@PathVariable("workoutId") Long workoutId) {
+        User currentUser = userService.getCurrentUser();
+        workoutService.deleteWorkout(workoutId, currentUser);
     }
 
-    @PostMapping(consumes = "application/json")
-    @ResponseStatus(HttpStatus.CREATED)
-    public Workout create(@RequestBody Workout workout) {
-        return workoutRepository.save(workout);
+    @PutMapping(value = "/update", consumes = "application/json")
+    public ResponseEntity<Workout> update (@RequestBody Workout workout) {
+        User currentUser = userService.getCurrentUser();
+        return new ResponseEntity<>(workoutService.updateWorkout(workout, currentUser), HttpStatus.OK);
     }
+
+
+
 
 
 

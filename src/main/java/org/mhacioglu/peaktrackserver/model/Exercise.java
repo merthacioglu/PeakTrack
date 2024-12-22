@@ -3,13 +3,19 @@ package org.mhacioglu.peaktrackserver.model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.io.Serial;
 import java.io.Serializable;
 
 @Data
 @Entity
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class Exercise implements Serializable {
 
     @Serial
@@ -43,14 +49,13 @@ public class Exercise implements Serializable {
 
 
 
-
     @NotNull
-    private enum Category {
+    public enum Category {
         CARDIO, STRENGTH, FLEX, BALANCE
     }
 
 
-    private enum MuscleGroup {
+    public enum MuscleGroup {
         CHEST, BACK, SHOULDERS, ARMS,
         QUADS, HAMSTRINGS, GLUTES, CALVES,
         ABS, OBLIQUES
