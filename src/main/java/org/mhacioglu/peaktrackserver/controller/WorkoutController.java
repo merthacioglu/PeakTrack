@@ -30,6 +30,12 @@ public class WorkoutController {
         return new ResponseEntity<>(workoutService.getAllWorkouts(currentUser), HttpStatus.OK);
     }
 
+    @GetMapping(value = "/getActiveWorkouts")
+    public ResponseEntity<List<Workout>> activeWorkouts() {
+        User currentUser = userService.getCurrentUser();
+        return ResponseEntity.ok(workoutService.getAllActiveWorkouts(currentUser));
+    }
+
 
     @PostMapping(path = "/create", consumes = "application/json")
     public ResponseEntity<Workout> create(@RequestBody Workout workout) {
@@ -37,6 +43,7 @@ public class WorkoutController {
         Workout newWorkout = workoutService.addWorkout(workout, currentUser);
         return new ResponseEntity<>(newWorkout, HttpStatus.CREATED);
     }
+
 
     @DeleteMapping("/delete/{workoutId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)

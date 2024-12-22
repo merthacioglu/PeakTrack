@@ -1,7 +1,6 @@
 package org.mhacioglu.peaktrackserver.controller;
 
 import org.mhacioglu.peaktrackserver.model.User;
-import org.mhacioglu.peaktrackserver.repository.UserRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;

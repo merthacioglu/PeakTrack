@@ -24,6 +24,12 @@ public class  WorkoutService {
         return workoutRepository.findAllByUserId(user.getId());
     }
 
+    public List<Workout> getAllActiveWorkouts(User user) {
+        return workoutRepository.findAllByUserIdOrderByStartAsc(user.getId())
+                .stream().filter(w -> LocalDateTime.now().isBefore(w.getStart().plusMinutes(w.getDurationInMinutes())))
+                .toList();
+    }
+
     public Workout addWorkout(Workout workout, User user) {
         List<Workout> workouts = workoutRepository.findAllByUserId(user.getId());
         if (checkIfWorkoutTimeIsValid(workouts, workout)) {

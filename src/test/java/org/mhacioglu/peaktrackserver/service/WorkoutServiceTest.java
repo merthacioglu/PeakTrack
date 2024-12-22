@@ -17,8 +17,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -93,13 +95,57 @@ public class WorkoutServiceTest {
     }
 
 
+
+
     @Test
     @DisplayName("Test scenario: get all workouts of the current user")
-    public void getAllWorkouts() {
+    public void getAllWorkouts_ShouldReturnAllWorkouts() {
         when(workoutRepository.findAllByUserId(currentUser.getId())).thenReturn(workouts);
         List<Workout> returnedWorkouts = workoutService.getAllWorkouts(currentUser);
         assertEquals(returnedWorkouts.size(), workouts.size());
     }
+
+    @Test
+    @DisplayName("Test scenario: get all workouts that will end in future sorted by start time")
+    public void getActiveWorkouts_ShouldReturnsWorkoutEndsInFutureSortedByStart() {
+        Workout w1 = Workout.builder()
+                .start(LocalDateTime.now().minusMinutes(20))
+                .name("Ongoing Workout")
+                .durationInMinutes(50)
+                .build();
+
+        Workout w2 = Workout.builder()
+                .start(LocalDateTime.of(2033, 10, 18, 16, 35))
+                .name("Upcoming Workout")
+                .durationInMinutes(30)
+                .user(currentUser)
+                .build();
+
+        Workout w3 = Workout.builder()
+                .start(LocalDateTime.of(2023, 10, 18, 16, 35))
+                .name("Finished Workout")
+                .durationInMinutes(30)
+                .user(currentUser)
+                .build();
+
+        when(workoutRepository.findAllByUserIdOrderByStartAsc(currentUser.getId()))
+                .thenReturn(List.of(w3, w1, w2));
+
+
+        List<Workout> activeWorkouts = workoutService.getAllActiveWorkouts(currentUser);
+
+        assertNotNull(activeWorkouts);
+        assertEquals(activeWorkouts.size(), 2);
+        assertTrue(activeWorkouts.stream().allMatch(
+                w -> LocalDateTime.now().isBefore(w.getStart().plusMinutes(w.getDurationInMinutes()))
+        ));
+        // checking if all the returned workouts will end in future
+
+        assertThat(activeWorkouts).isSortedAccordingTo(Comparator.comparing(Workout::getStart));
+        // checking if the returned workouts are sorted by start time from soonest to latest
+
+    }
+
 
     @Test
     @DisplayName("Test scenario: add a workout to the list of workouts of the current user")

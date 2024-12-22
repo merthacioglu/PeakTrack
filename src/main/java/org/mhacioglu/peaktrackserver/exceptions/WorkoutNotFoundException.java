@@ -1,7 +1,5 @@
 package org.mhacioglu.peaktrackserver.exceptions;
 
-import lombok.Getter;
-
 public class WorkoutNotFoundException extends WorkoutException{
 
     public WorkoutNotFoundException(Long workoutId) {

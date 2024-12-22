@@ -9,8 +9,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
-import static org.springframework.mock.http.server.reactive.MockServerHttpRequest.post;
-import static org.springframework.mock.http.server.reactive.MockServerHttpRequest.put;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import org.mhacioglu.peaktrackserver.config.JwtAuthenticationFilter;
@@ -33,7 +32,6 @@ import java.util.List;
 import static org.hamcrest.Matchers.hasSize;
 
 import static org.mockito.Mockito.when;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -94,6 +92,41 @@ public class WorkoutControllerTest {
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].id").value(workout.getId()))
                 .andExpect(jsonPath("$[0].name").value(workout.getName()));
+    }
+
+    @Test
+    @DisplayName("Get all active workouts which will end in future sorted by start date")
+    public void getAllActiveWorkouts_ShouldReturnWorkoutsThatEndAfterNow() throws Exception {
+
+        Workout w1 = Workout.builder()
+                .id(101L)
+                .name("Ongoing workout")
+                .start(LocalDateTime.now().minusMinutes(30))
+                .durationInMinutes(60)
+                .user(user)
+                .build();
+
+        Workout w2 = Workout.builder()
+                .id(102L)
+                .name("Upcoming workout")
+                .start(LocalDateTime.of(2041, 1, 1, 8, 35))
+                .durationInMinutes(60)
+                .user(user)
+                .build();
+
+        when(workoutService.getAllActiveWorkouts(user))
+                .thenReturn(List.of(w1, w2));
+
+        mockMvc.perform(get("/api/workout/getActiveWorkouts")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].id").value(w1.getId()))
+                .andExpect(jsonPath("$[0].name").value(w1.getName()))
+                .andExpect(jsonPath("$[1].id").value(w2.getId()))
+                .andExpect(jsonPath("$[1].name").value(w2.getName()));
+
     }
 
     @Test
