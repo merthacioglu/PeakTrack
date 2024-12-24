@@ -2,6 +2,7 @@ package org.mhacioglu.peaktrackserver.controller;
 
 import org.mhacioglu.peaktrackserver.model.User;
 import org.mhacioglu.peaktrackserver.model.Workout;
+import org.mhacioglu.peaktrackserver.model.WorkoutSummary;
 import org.mhacioglu.peaktrackserver.service.UserService;
 import org.mhacioglu.peaktrackserver.service.WorkoutService;
 import org.springframework.http.HttpStatus;
@@ -34,6 +35,12 @@ public class WorkoutController {
     public ResponseEntity<List<Workout>> activeWorkouts() {
         User currentUser = userService.getCurrentUser();
         return ResponseEntity.ok(workoutService.getAllActiveWorkouts(currentUser));
+    }
+
+    @GetMapping(value = "/generateReport")
+    public ResponseEntity<List<WorkoutSummary>> report() {
+        User currentUser = userService.getCurrentUser();
+        return new ResponseEntity<>(workoutService.listAllPastWorkouts(currentUser), HttpStatus.OK);
     }
 
 

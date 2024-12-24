@@ -5,6 +5,7 @@ import org.mhacioglu.peaktrackserver.exceptions.WorkoutNotFoundException;
 import org.mhacioglu.peaktrackserver.exceptions.WorkoutTimeConflictException;
 import org.mhacioglu.peaktrackserver.model.User;
 import org.mhacioglu.peaktrackserver.model.Workout;
+import org.mhacioglu.peaktrackserver.model.WorkoutSummary;
 import org.mhacioglu.peaktrackserver.repository.WorkoutRepository;
 import org.springframework.stereotype.Service;
 
@@ -28,6 +29,20 @@ public class  WorkoutService {
         return workoutRepository.findAllByUserIdOrderByStartAsc(user.getId())
                 .stream().filter(w -> LocalDateTime.now().isBefore(w.getStart().plusMinutes(w.getDurationInMinutes())))
                 .toList();
+    }
+
+    public List<WorkoutSummary> listAllPastWorkouts(User user) {
+        List<Workout> pastWorkouts = workoutRepository.findAllByUserIdOrderByStartDesc(user.getId()).
+                stream().filter(w -> LocalDateTime.now().isAfter(w.getStart().plusMinutes(w.getDurationInMinutes())))
+                .toList();
+
+        return pastWorkouts.stream().map(workout -> WorkoutSummary.builder()
+                .workoutName(workout.getName())
+                .workoutStart(workout.getStart())
+                .workoutDuration(workout.getDurationInMinutes())
+                .build()).toList();
+
+
     }
 
     public Workout addWorkout(Workout workout, User user) {
@@ -64,6 +79,10 @@ public class  WorkoutService {
 
         if(workout.getName() != null) {
             existingWorkout.setName(workout.getName());
+        }
+
+        if (workout.getDurationInMinutes() != 0) {
+            existingWorkout.setDurationInMinutes(workout.getDurationInMinutes());
         }
 
         if (workout.getStart() != null) {

@@ -10,6 +10,7 @@ import org.mhacioglu.peaktrackserver.exceptions.WorkoutTimeConflictException;
 import org.mhacioglu.peaktrackserver.model.Exercise;
 import org.mhacioglu.peaktrackserver.model.User;
 import org.mhacioglu.peaktrackserver.model.Workout;
+import org.mhacioglu.peaktrackserver.model.WorkoutSummary;
 import org.mhacioglu.peaktrackserver.repository.WorkoutRepository;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -35,7 +36,9 @@ public class WorkoutServiceTest {
     private WorkoutService workoutService;
 
     private static User currentUser;
-    private static List<Workout> workouts;
+    private static Workout pastWorkout;
+    private static Workout futureWorkout;
+    private static Workout ongoingWorkout;
 
     @BeforeAll
     public static void setup() {
@@ -43,19 +46,27 @@ public class WorkoutServiceTest {
         currentUser.setId(1L);
         currentUser.setUsername("testuser");
 
-        Workout w1 = Workout.builder()
+        pastWorkout = Workout.builder()
                 .id(101L)
-                .name("Morning Workout")
-                .start(LocalDateTime.of(2024, 2, 20, 8, 0))
+                .name("Past Workout")
+                .start(LocalDateTime.now().minusHours(2))
                 .durationInMinutes(60)
                 .user(currentUser)
                 .build();
 
-        Workout w2 = Workout.builder()
+        futureWorkout = Workout.builder()
                 .id(102L)
-                .name("Evening Workout")
-                .start(LocalDateTime.of(2024, 2, 20, 20, 30))
+                .name("Upcoming Workout")
+                .start(LocalDateTime.now().plusHours(3))
                 .durationInMinutes(45)
+                .user(currentUser)
+                .build();
+
+        ongoingWorkout= Workout.builder()
+                .id(103L)
+                .name("Ongoing workout")
+                .start(LocalDateTime.now().minusMinutes(30))
+                .durationInMinutes(60)
                 .user(currentUser)
                 .build();
 
@@ -66,16 +77,14 @@ public class WorkoutServiceTest {
         Exercise e3 = createTestExercise("Lunges", "Leg and glute exercise",
                 Exercise.Category.STRENGTH, Exercise.MuscleGroup.GLUTES, 4, 12, 40);
 
-        w1.setExercises(List.of(e1, e2, e3));
+        pastWorkout.setExercises(List.of(e1, e2, e3));
 
         Exercise e4 = createTestExercise("Plank", "Core strengthening exercise",
                 Exercise.Category.FLEX, Exercise.MuscleGroup.ABS, 3, 1, 0);
         Exercise e5 = createTestExercise("Deadlift", "Strength exercise for lower back and legs",
                 Exercise.Category.STRENGTH, Exercise.MuscleGroup.HAMSTRINGS, 3, 8, 80);
 
-        w2.setExercises(List.of(e4, e5));
-
-        workouts = List.of(w1, w2);
+        futureWorkout.setExercises(List.of(e4, e5));
 
 
     }
@@ -100,36 +109,18 @@ public class WorkoutServiceTest {
     @Test
     @DisplayName("Test scenario: get all workouts of the current user")
     public void getAllWorkouts_ShouldReturnAllWorkouts() {
-        when(workoutRepository.findAllByUserId(currentUser.getId())).thenReturn(workouts);
+        when(workoutRepository.findAllByUserId(currentUser.getId()))
+                .thenReturn(List.of(pastWorkout, futureWorkout, ongoingWorkout));
         List<Workout> returnedWorkouts = workoutService.getAllWorkouts(currentUser);
-        assertEquals(returnedWorkouts.size(), workouts.size());
+        assertEquals(returnedWorkouts.size(), 3);
     }
 
     @Test
     @DisplayName("Test scenario: get all workouts that will end in future sorted by start time")
     public void getActiveWorkouts_ShouldReturnsWorkoutEndsInFutureSortedByStart() {
-        Workout w1 = Workout.builder()
-                .start(LocalDateTime.now().minusMinutes(20))
-                .name("Ongoing Workout")
-                .durationInMinutes(50)
-                .build();
-
-        Workout w2 = Workout.builder()
-                .start(LocalDateTime.of(2033, 10, 18, 16, 35))
-                .name("Upcoming Workout")
-                .durationInMinutes(30)
-                .user(currentUser)
-                .build();
-
-        Workout w3 = Workout.builder()
-                .start(LocalDateTime.of(2023, 10, 18, 16, 35))
-                .name("Finished Workout")
-                .durationInMinutes(30)
-                .user(currentUser)
-                .build();
 
         when(workoutRepository.findAllByUserIdOrderByStartAsc(currentUser.getId()))
-                .thenReturn(List.of(w3, w1, w2));
+                .thenReturn(List.of(pastWorkout, ongoingWorkout, futureWorkout));
 
 
         List<Workout> activeWorkouts = workoutService.getAllActiveWorkouts(currentUser);
@@ -146,28 +137,41 @@ public class WorkoutServiceTest {
 
     }
 
+    @Test
+    @DisplayName("Test scenario: list all ended workouts")
+    public void generateReport_ShouldReturnPastWorkoutInfoForTheCurrentUser() {
+        when(workoutRepository.findAllByUserIdOrderByStartDesc(currentUser.getId()))
+                .thenReturn(List.of(futureWorkout, ongoingWorkout, pastWorkout));
+
+        List<WorkoutSummary> report = workoutService.listAllPastWorkouts(currentUser);
+        assertNotEquals(null, report);
+        assertEquals(1, report.size());
+        assertEquals(pastWorkout.getName(), report.getFirst().getWorkoutName());
+        verify(workoutRepository, times(1)).
+                findAllByUserIdOrderByStartDesc(currentUser.getId());
+
+    }
+
 
     @Test
     @DisplayName("Test scenario: add a workout to the list of workouts of the current user")
     public void addWorkout_NoProblem() {
         Workout newWorkout = Workout.builder()
-                .id(103L)
-                .name("Afternoon Workout")
-                .start(LocalDateTime.of(2024, 2, 20, 16, 0))
+                .id(104L)
+                .name("New Workout")
+                .start(LocalDateTime.now().plusYears(30))
                 .durationInMinutes(60)
                 .build();
 
-        when(workoutRepository.findAllByUserId(currentUser.getId())).thenReturn(workouts);
+        when(workoutRepository.findAllByUserId(currentUser.getId()))
+                .thenReturn(List.of(pastWorkout, futureWorkout, ongoingWorkout));
         when(workoutRepository.save(any(Workout.class)))
                 .thenAnswer(invocation -> invocation.<Workout>getArgument(0));
 
         Workout savedWorkout = workoutService.addWorkout(newWorkout, currentUser);
 
-        // Assert
-        // Verify the workout was saved
-        verify(workoutRepository).save(newWorkout);
+        verify(workoutRepository, times(1)).save(newWorkout);
 
-        // Verify the user was set correctly
         assertEquals(currentUser, savedWorkout.getUser());
 
         // Verify the workout details were preserved
@@ -181,13 +185,14 @@ public class WorkoutServiceTest {
     public void addWorkout_ShouldThrowException_WhenThereIsTimingConflict() {
 
         Workout newWorkout = Workout.builder()
-                .id(103L)
-                .name("Another morning Workout")
-                .start(LocalDateTime.of(2024, 2, 20, 7, 30))
+                .id(104L)
+                .name("Another workout")
+                .start(LocalDateTime.now().minusHours(1))
                 .durationInMinutes(60)
                 .build();
 
-        when(workoutRepository.findAllByUserId(currentUser.getId())).thenReturn(workouts);
+        when(workoutRepository.findAllByUserId(currentUser.getId()))
+                .thenReturn(List.of(pastWorkout, futureWorkout, ongoingWorkout));
 
         assertThrows(WorkoutTimeConflictException.class,
                 () -> workoutService.addWorkout(newWorkout, currentUser));
@@ -202,12 +207,12 @@ public class WorkoutServiceTest {
     public void updateWorkout_NoProblem() {
         Workout update = Workout.builder()
                 .id(101L)
+                .durationInMinutes(100)
                 .name("Another morning Workout")
-                .start(LocalDateTime.of(2024, 2, 20, 7, 30))
-                .durationInMinutes(75)
                 .build();
 
-        when(workoutRepository.findAllByUserId(currentUser.getId())).thenReturn(workouts);
+        when(workoutRepository.findAllByUserId(currentUser.getId()))
+                .thenReturn(List.of(pastWorkout, futureWorkout, ongoingWorkout));
         when(workoutRepository.save(any(Workout.class))).
                 thenAnswer(invocation -> invocation.<Workout>getArgument(0));
 
@@ -216,8 +221,7 @@ public class WorkoutServiceTest {
         update.setUser(currentUser);
         verify(workoutRepository, atMost(1)).save(update);
         assertEquals(currentUser.getId(), savedWorkout.getUser().getId());
-        assertEquals(update.getName(), savedWorkout.getName());
-        assertEquals(update.getStart(), savedWorkout.getStart());
+        assertEquals(update.getDurationInMinutes(), savedWorkout.getDurationInMinutes());
     }
 
     @Test
@@ -226,12 +230,13 @@ public class WorkoutServiceTest {
         Workout update = new Workout();
         update.setId(102L);
 
-        List<Exercise> exercises = new ArrayList<>(workouts.get(1).getExercises());
+        List<Exercise> exercises = new ArrayList<>(futureWorkout.getExercises());
         exercises.add(createTestExercise("Running", "Cardio exercise for endurance",
                 Exercise.Category.CARDIO, null, 1, 30, 0));
 
         update.setExercises(exercises);
-        when(workoutRepository.findAllByUserId(currentUser.getId())).thenReturn(workouts);
+        when(workoutRepository.findAllByUserId(currentUser.getId())).
+                thenReturn(List.of(pastWorkout, futureWorkout, ongoingWorkout));
         when(workoutRepository.save(any(Workout.class)))
                 .thenAnswer(invocation -> invocation.<Workout>getArgument(0));
 
@@ -248,11 +253,12 @@ public class WorkoutServiceTest {
         Workout change = Workout.builder()
                 .id(101L)
                 .name("Another Evening Workout")
-                .start(LocalDateTime.of(2024, 2, 20, 20, 30))
+                .start(LocalDateTime.now())
                 .durationInMinutes(75)
                 .build();
 
-        when(workoutRepository.findAllByUserId(currentUser.getId())).thenReturn(workouts);
+        when(workoutRepository.findAllByUserId(currentUser.getId()))
+                .thenReturn(List.of(pastWorkout, futureWorkout, ongoingWorkout));
         assertThrows(WorkoutTimeConflictException.class,
                 () -> workoutService.updateWorkout(change, currentUser));
 
@@ -265,13 +271,14 @@ public class WorkoutServiceTest {
             "whose id is not in the id list of the current user's workouts")
     public void updateWorkout_ShouldThrowException_WhenWorkoutDoesNotBelongToTheCurrentUser() {
         Workout change = Workout.builder()
-                .id(103L)
+                .id(104L)
                 .name("Another Morning Workout")
                 .start(LocalDateTime.of(2024, 2, 21, 8, 0))
                 .durationInMinutes(75)
                 .build();
 
-        when(workoutRepository.findAllByUserId(currentUser.getId())).thenReturn(workouts);
+        when(workoutRepository.findAllByUserId(currentUser.getId()))
+                .thenReturn(List.of(pastWorkout, futureWorkout, ongoingWorkout));
         assertThrows(WorkoutNotFoundException.class,
                 () -> workoutService.updateWorkout(change, currentUser));
 
@@ -284,7 +291,7 @@ public class WorkoutServiceTest {
     public void updateWorkout_ShouldThrowException_WhenWorkoutDoesNotHaveID() {
         Workout change = Workout.builder()
                 .name("Another Morning Workout")
-                .start(LocalDateTime.of(2024, 2, 21, 8, 0))
+                .start(LocalDateTime.now())
                 .durationInMinutes(45)
                 .build();
 
@@ -297,7 +304,8 @@ public class WorkoutServiceTest {
     @Test
     @DisplayName("Test scenario: delete a workout from the user's workout list")
     public void deleteWorkout_NoProblem() {
-        when(workoutRepository.findAllByUserId(currentUser.getId())).thenReturn(workouts);
+        when(workoutRepository.findAllByUserId(currentUser.getId())).
+                thenReturn(List.of(pastWorkout, futureWorkout, ongoingWorkout));
         workoutService.deleteWorkout(101L, currentUser);
 
         verify(workoutRepository, atMost(1)).deleteById(101L);
@@ -307,9 +315,10 @@ public class WorkoutServiceTest {
     @Test
     @DisplayName("Test scenario: delete a workout which is not in the user's workouts")
     public void  deleteWorkout_ShouldThrowException_WhenWorkoutDoesNotBelongToTheCurrentUser() {
-        when(workoutRepository.findAllByUserId(currentUser.getId())).thenReturn(workouts);
+        when(workoutRepository.findAllByUserId(currentUser.getId())).
+                thenReturn(List.of(pastWorkout, futureWorkout, ongoingWorkout));
         assertThrows(WorkoutNotFoundException.class,
-                () -> workoutService.deleteWorkout(103L, currentUser));
+                () -> workoutService.deleteWorkout(104L, currentUser));
 
         verify(workoutRepository, never()).deleteById(any(Long.class));
     }

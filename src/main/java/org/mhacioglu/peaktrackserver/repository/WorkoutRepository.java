@@ -9,7 +9,7 @@ public interface WorkoutRepository extends CrudRepository<Workout, Long> {
     List<Workout> findAllByUserId(Long userId);
 
     List<Workout> findAllByUserIdOrderByStartAsc(Long userId);
-
+    List<Workout> findAllByUserIdOrderByStartDesc(Long userId);
 
 }
 

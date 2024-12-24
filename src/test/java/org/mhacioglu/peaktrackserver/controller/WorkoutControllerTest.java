@@ -4,12 +4,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mhacioglu.peaktrackserver.model.WorkoutSummary;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
 
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import org.mhacioglu.peaktrackserver.config.JwtAuthenticationFilter;
@@ -31,7 +32,6 @@ import java.util.List;
 
 import static org.hamcrest.Matchers.hasSize;
 
-import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -60,7 +60,7 @@ public class WorkoutControllerTest {
     private ObjectMapper objectMapper;
 
     private User user;
-    private Workout workout;
+    private Workout w1;
 
     @BeforeEach
     public void setup() {
@@ -68,7 +68,7 @@ public class WorkoutControllerTest {
         user.setId(1L);
         user.setUsername("username");
 
-        workout = Workout.builder()
+        w1 = Workout.builder()
                 .id(101L)
                 .name("Morning Workout")
                 .start(LocalDateTime.of(2024, 4, 12, 8, 30))
@@ -82,7 +82,7 @@ public class WorkoutControllerTest {
     @Test
     @DisplayName("Get all workouts for the current user")
     void getAllWorkouts_ShouldReturnWorkoutList() throws Exception {
-        List<Workout> workouts = List.of(workout);
+        List<Workout> workouts = List.of(w1);
         when(workoutService.getAllWorkouts(user)).thenReturn(workouts);
 
         mockMvc.perform(get("/api/workout/getAll")
@@ -90,8 +90,8 @@ public class WorkoutControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].id").value(workout.getId()))
-                .andExpect(jsonPath("$[0].name").value(workout.getName()));
+                .andExpect(jsonPath("$[0].id").value(w1.getId()))
+                .andExpect(jsonPath("$[0].name").value(w1.getName()));
     }
 
     @Test
@@ -130,6 +130,41 @@ public class WorkoutControllerTest {
     }
 
     @Test
+    @DisplayName("List all completed workouts as a report to track progress")
+    void generateReport_ShouldReturnCompletedWorkouts() throws Exception {
+        WorkoutSummary ws1 = WorkoutSummary.builder()
+                    .workoutName("Past workout 1")
+                    .workoutStart(LocalDateTime.now().minusYears(1))
+                    .workoutDuration(70)
+                    .build();
+
+        WorkoutSummary ws2 = WorkoutSummary.builder()
+                .workoutName("Past workout 2")
+                .workoutStart(LocalDateTime.now().minusMonths(3))
+                .workoutDuration(45)
+                .build();
+
+        when(workoutService.listAllPastWorkouts(eq(user)))
+                .thenReturn(List.of(ws2, ws1));
+
+        mockMvc.perform(get("/api/workout/generateReport")
+                .accept(MediaType.APPLICATION_JSON))
+                .andDo(result -> {
+                    System.out.println("Response: " + result.getResponse().getContentAsString());
+                    System.out.println("Expected: " + ws2.getWorkoutStart());
+                })
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].workoutName").value(ws2.getWorkoutName()))
+                .andExpect(jsonPath("$[1].workoutName").value(ws1.getWorkoutName()));
+
+
+        verify(workoutService, times(1)).listAllPastWorkouts(eq(user));
+
+    }
+
+    @Test
     @DisplayName("Create a new workout and return the created workout")
     void createWorkout_ShouldReturnCreatedWorkout() throws Exception {
         Workout newWorkout = Workout.builder()
@@ -160,6 +195,7 @@ public class WorkoutControllerTest {
 
         verify(workoutService).addWorkout(any(Workout.class), eq(user));
     }
+
 
     @Test
     @DisplayName("Update an existing workout and return the updated workout")
