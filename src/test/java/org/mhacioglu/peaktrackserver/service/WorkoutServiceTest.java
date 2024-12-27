@@ -109,8 +109,8 @@ public class WorkoutServiceTest {
     @Test
     @DisplayName("Test scenario: get all workouts of the current user")
     public void getAllWorkouts_ShouldReturnAllWorkouts() {
-        when(workoutRepository.findAllByUserId(currentUser.getId()))
-                .thenReturn(List.of(pastWorkout, futureWorkout, ongoingWorkout));
+        when(workoutRepository.findAllByUserIdOrderByStartDesc(currentUser.getId()))
+                .thenReturn(List.of(futureWorkout, ongoingWorkout, pastWorkout));
         List<Workout> returnedWorkouts = workoutService.getAllWorkouts(currentUser);
         assertEquals(returnedWorkouts.size(), 3);
     }

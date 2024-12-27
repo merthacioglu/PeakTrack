@@ -1,15 +1,21 @@
 package org.mhacioglu.peaktrackserver.exceptions;
 
 import io.jsonwebtoken.ExpiredJwtException;
+import jakarta.validation.ConstraintViolationException;
+import org.springframework.beans.factory.parsing.Problem;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AccountStatusException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.security.SignatureException;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -20,11 +26,11 @@ public class GlobalExceptionHandler {
         // TODO send this stack trace to an observability tool
         exception.printStackTrace();
 
+
         if (exception instanceof BadCredentialsException) {
             errorDetail = ProblemDetail.forStatusAndDetail(HttpStatusCode.valueOf(401), exception.getMessage());
             errorDetail.setProperty("description", "The username or password is incorrect");
 
-            return errorDetail;
         }
 
         if (exception instanceof AccountStatusException) {
@@ -54,4 +60,40 @@ public class GlobalExceptionHandler {
 
         return errorDetail;
     }
+
+    @ExceptionHandler(WorkoutException.class)
+    public ProblemDetail handleWorkoutException(WorkoutException ex) {
+        if (ex instanceof WorkoutNotFoundException) {
+            return ProblemDetail.forStatusAndDetail(HttpStatusCode.valueOf(404), ex.getMessage());
+        }
+        else {
+            return ProblemDetail.forStatusAndDetail(HttpStatusCode.valueOf(400), ex.getMessage());
+        }
+
+
+    }
+
+    @ExceptionHandler(UsernameAlreadyExistsException.class)
+    public ProblemDetail handleExistingUsernameException(UsernameAlreadyExistsException exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatusCode.valueOf(400),
+                exception.getMessage());
+
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ProblemDetail handleConstraintViolation(ConstraintViolationException exception) {
+        ProblemDetail errorDetail = ProblemDetail.forStatusAndDetail(HttpStatusCode.valueOf(400),
+                "Validation error");
+
+        Map<String, String> errors = new HashMap<>();
+        exception.getConstraintViolations().forEach(violation ->
+                errors.put(violation.getPropertyPath().toString(), violation.getMessage())
+        );
+
+        errorDetail.setProperty("errors", errors);
+        return errorDetail;
+    }
+
+
+
 }

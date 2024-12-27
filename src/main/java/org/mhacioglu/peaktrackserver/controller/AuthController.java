@@ -1,5 +1,6 @@
 package org.mhacioglu.peaktrackserver.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.mhacioglu.peaktrackserver.dto.LoginResponse;
 import org.mhacioglu.peaktrackserver.dto.LoginUserDto;
 import org.mhacioglu.peaktrackserver.dto.RegisterUserDto;
@@ -11,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 
 import org.springframework.web.bind.annotation.*;
 
+@Tag(name = "Authentication", description = "Authentication management APIs")
 @RequestMapping("/auth")
 @RestController
 public class AuthController {

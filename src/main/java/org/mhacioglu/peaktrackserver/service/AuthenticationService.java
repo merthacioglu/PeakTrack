@@ -2,6 +2,7 @@ package org.mhacioglu.peaktrackserver.service;
 
 import org.mhacioglu.peaktrackserver.dto.LoginUserDto;
 import org.mhacioglu.peaktrackserver.dto.RegisterUserDto;
+import org.mhacioglu.peaktrackserver.exceptions.UsernameAlreadyExistsException;
 import org.mhacioglu.peaktrackserver.model.User;
 import org.mhacioglu.peaktrackserver.repository.UserRepository;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -18,9 +19,7 @@ public class AuthenticationService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
 
-    private static final Pattern UPPERCASE_PATTERN = Pattern.compile("[A-Z]");
-    private static final Pattern LOWERCASE_PATTERN = Pattern.compile("[a-z]");
-    private static final Pattern SPECIAL_CHAR_PATTERN = Pattern.compile("[^a-zA-Z0-9]");
+
 
     public AuthenticationService(UserRepository userRepository,
                                  PasswordEncoder passwordEncoder,
@@ -32,26 +31,9 @@ public class AuthenticationService {
 
     public User signUp(RegisterUserDto registerUserDto) {
         if (userRepository.findByUsername(registerUserDto.getUsername()).isPresent()) {
-            throw new IllegalArgumentException("Another user with that username already exists.");
+            throw new UsernameAlreadyExistsException("Username already exists");
         }
         String pass = registerUserDto.getPassword();
-        if (pass.length() < 6) {
-            throw new IllegalArgumentException("Password must be at least 6 characters long.");
-        }
-
-        if (!UPPERCASE_PATTERN.matcher(pass).find()) {
-            throw new IllegalArgumentException("Password must contain at least 1 uppercase letter.");
-        }
-
-        // Check for at least one lowercase letter
-        if (!LOWERCASE_PATTERN.matcher(pass).find()) {
-            throw new IllegalArgumentException("Password must contain at least 1 lowercase letter.");
-        }
-
-        if (!SPECIAL_CHAR_PATTERN.matcher(pass).find()) {
-            throw new IllegalArgumentException("Password must contain at least 1 special character.");
-        }
-
 
         User user = new User();
         user.setUsername(registerUserDto.getUsername());

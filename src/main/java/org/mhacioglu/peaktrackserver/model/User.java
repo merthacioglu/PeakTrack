@@ -3,6 +3,7 @@ package org.mhacioglu.peaktrackserver.model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.Data;
+import org.mhacioglu.peaktrackserver.validation.StrongPassword;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -23,10 +24,11 @@ public class User implements Serializable, UserDetails {
 
     @NotNull
     @Column(unique = true)
-    @Size(min=5)
+    @Size(min=5, max = 20)
     private String username;
 
     @NotNull
+    @StrongPassword
     private String password;
 
     @NotNull
