@@ -1,11 +1,16 @@
 package org.mhacioglu.peaktrackserver.dto;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.mhacioglu.peaktrackserver.model.User.Gender;
+import org.mhacioglu.peaktrackserver.validation.ValidPassword;
 
 @Data
 public class RegisterUserDto {
     private String username;
+
+    @NotNull
+    @ValidPassword
     private String password;
     private String email;
     private String firstName;

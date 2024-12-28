@@ -5,13 +5,18 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import org.mhacioglu.peaktrackserver.model.BlacklistedToken;
+import org.mhacioglu.peaktrackserver.repository.BlacklistedTokenRepository;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.security.Key;
+import java.time.Instant;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -22,6 +27,26 @@ public class JwtService {
 
     @Value("${security.jwt.expiration-time}")
     private long jwtExpiration;
+
+    private final BlacklistedTokenRepository blacklistedTokenRepository;
+
+    public JwtService(BlacklistedTokenRepository blacklistedTokenRepository) {
+        this.blacklistedTokenRepository = blacklistedTokenRepository;
+    }
+
+    public void blacklistToken(String token) {
+        Date expiration = extractExpiration(token);
+        BlacklistedToken blacklistedToken = new BlacklistedToken(token, expiration.toInstant());
+        blacklistedTokenRepository.save(blacklistedToken);
+    }
+
+    public boolean isTokenBlacklisted(String token) {
+        return blacklistedTokenRepository.existsById(token);
+    }
+
+
+
+
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
@@ -61,11 +86,20 @@ public class JwtService {
 
     public boolean isTokenValid(String token, UserDetails userDetails) {
         final String username = extractUsername(token);
-        return (username.equals(userDetails.getUsername())) && !isTokenExpired(token);
+        return (username.equals(userDetails.getUsername()))
+                && !isTokenExpired(token)
+                && !isTokenBlacklisted(token);
     }
 
     private boolean isTokenExpired(String token) {
         return extractExpiration(token).before(new Date());
+    }
+
+    @Scheduled(cron = "0 0 * * * *") // Run every hour
+    public void cleanupExpiredTokens() {
+        List<BlacklistedToken> expiredTokens =
+                blacklistedTokenRepository.findExpiredTokens(Instant.now());
+        blacklistedTokenRepository.deleteAll(expiredTokens);
     }
 
     private Date extractExpiration(String token) {

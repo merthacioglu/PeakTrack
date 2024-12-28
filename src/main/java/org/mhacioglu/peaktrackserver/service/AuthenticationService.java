@@ -1,5 +1,6 @@
 package org.mhacioglu.peaktrackserver.service;
 
+import jakarta.validation.Valid;
 import org.mhacioglu.peaktrackserver.dto.LoginUserDto;
 import org.mhacioglu.peaktrackserver.dto.RegisterUserDto;
 import org.mhacioglu.peaktrackserver.exceptions.UsernameAlreadyExistsException;
@@ -10,9 +11,9 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.validation.annotation.Validated;
 
-import java.util.regex.Pattern;
-
+@Validated
 @Service
 public class AuthenticationService {
     private final UserRepository userRepository;
@@ -29,7 +30,7 @@ public class AuthenticationService {
         this.authenticationManager = authenticationManager;
     }
 
-    public User signUp(RegisterUserDto registerUserDto) {
+    public User signUp(@Valid RegisterUserDto registerUserDto) {
         if (userRepository.findByUsername(registerUserDto.getUsername()).isPresent()) {
             throw new UsernameAlreadyExistsException("Username already exists");
         }

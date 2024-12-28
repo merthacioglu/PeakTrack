@@ -9,7 +9,6 @@ import org.mhacioglu.peaktrackserver.service.AuthenticationService;
 import org.mhacioglu.peaktrackserver.service.JwtService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Authentication", description = "Authentication management APIs")
@@ -45,6 +44,13 @@ public class AuthController {
         loginResponse.setExpiresIn(jwtService.getExpirationTime());
 
         return ResponseEntity.ok(loginResponse);
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(@RequestHeader("Authorization") String token) {
+        token = token.substring(7);
+        jwtService.blacklistToken(token);
+        return ResponseEntity.ok().build();
     }
 
 

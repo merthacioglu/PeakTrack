@@ -1,9 +1,12 @@
 package org.mhacioglu.peaktrackserver.model;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
-import org.mhacioglu.peaktrackserver.validation.StrongPassword;
+import org.mhacioglu.peaktrackserver.validation.ValidPassword;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -24,11 +27,10 @@ public class User implements Serializable, UserDetails {
 
     @NotNull
     @Column(unique = true)
-    @Size(min=5, max = 20)
+    @Size(min = 5, max = 20)
     private String username;
 
     @NotNull
-    @StrongPassword
     private String password;
 
     @NotNull
@@ -68,6 +70,7 @@ public class User implements Serializable, UserDetails {
     public boolean isAccountNonExpired() {
         return true;
     }
+
     @Override
     public boolean isAccountNonLocked() {
         return true;
@@ -86,8 +89,6 @@ public class User implements Serializable, UserDetails {
     public enum Gender {
         MALE, FEMALE, TRANSGENDER, INTERSEX
     }
-
-
 
 
 }
