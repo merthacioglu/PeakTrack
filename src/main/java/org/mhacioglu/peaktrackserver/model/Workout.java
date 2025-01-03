@@ -1,6 +1,5 @@
 package org.mhacioglu.peaktrackserver.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -48,7 +47,7 @@ public class Workout implements Serializable {
     )
     private List<Exercise> exercises;
 
-    @ManyToOne
+    @ManyToOne(optional = false)
     private User user;
 
 

@@ -16,6 +16,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 
 @RestController
@@ -56,7 +58,9 @@ public class WorkoutController {
     @GetMapping(value = "/getAll")
     public ResponseEntity<List<Workout>> all() {
         User currentUser = userService.getCurrentUser();
-        return new ResponseEntity<>(workoutService.getAllWorkouts(currentUser), HttpStatus.OK);
+        List<Workout> workouts = currentUser.getWorkouts();
+        workouts.sort(Comparator.comparing(Workout::getStart));
+        return new ResponseEntity<>(workouts, HttpStatus.OK);
     }
 
     @Operation(
@@ -85,7 +89,11 @@ public class WorkoutController {
     @GetMapping(value = "/getActiveWorkouts")
     public ResponseEntity<List<Workout>> activeWorkouts() {
         User currentUser = userService.getCurrentUser();
-        return ResponseEntity.ok(workoutService.getAllActiveWorkouts(currentUser));
+        List<Workout> workouts = currentUser.getWorkouts().stream()
+                .filter(w -> LocalDateTime.now().isBefore(w.getStart().plusMinutes(w.getDurationInMinutes())))
+                .sorted(Comparator.comparing(Workout::getStart)).toList();
+
+        return new ResponseEntity<>(workouts, HttpStatus.OK);
     }
 
     @Operation(

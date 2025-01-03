@@ -40,6 +40,7 @@ public class AuthenticationService {
         user.setUsername(registerUserDto.getUsername());
         user.setPassword(passwordEncoder.encode(pass));
         user.setName(registerUserDto.getFirstName());
+        user.setEmail(registerUserDto.getEmail());
         user.setLastName(registerUserDto.getLastName());
         user.setAge(registerUserDto.getAge());
         user.setGender(registerUserDto.getGender());

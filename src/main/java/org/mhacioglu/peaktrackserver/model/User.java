@@ -1,23 +1,25 @@
 package org.mhacioglu.peaktrackserver.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
-import org.mhacioglu.peaktrackserver.validation.ValidPassword;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
 @Data
 @Entity
 public class User implements Serializable, UserDetails {
+
     @Serial
     private final static long serialVersionUID = 1L;
 
@@ -61,6 +63,16 @@ public class User implements Serializable, UserDetails {
 
     private String additionalNotes;
 
+    @JsonIgnore
+    @OneToMany(mappedBy = "user",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true)
+    private List<Workout> workouts;
+
+    public User() {
+        this.workouts = new ArrayList<>();
+    }
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of();
@@ -84,6 +96,17 @@ public class User implements Serializable, UserDetails {
     @Override
     public boolean isEnabled() {
         return true;
+    }
+
+    public void addWorkout(Workout workout) {
+        workout.setUser(this);
+        workouts.add(workout);
+    }
+
+    public void deleteWorkout(Workout workout) {
+        workout.setUser(null);
+        workouts.remove(workout);
+
     }
 
     public enum Gender {

@@ -10,45 +10,40 @@ import org.mhacioglu.peaktrackserver.repository.WorkoutRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
 @Service
-public class  WorkoutService {
+public class WorkoutService {
     private final WorkoutRepository workoutRepository;
 
     public WorkoutService(WorkoutRepository workoutRepository) {
         this.workoutRepository = workoutRepository;
     }
 
-    public List<Workout> getAllWorkouts(User user) {
-        return workoutRepository.findAllByUserIdOrderByStartDesc(user.getId());
-    }
 
-    public List<Workout> getAllActiveWorkouts(User user) {
-        return workoutRepository.findAllByUserIdOrderByStartAsc(user.getId())
-                .stream().filter(w -> LocalDateTime.now().isBefore(w.getStart().plusMinutes(w.getDurationInMinutes())))
-                .toList();
-    }
 
     public List<WorkoutSummary> listAllPastWorkouts(User user) {
-        List<Workout> pastWorkouts = workoutRepository.findAllByUserIdOrderByStartDesc(user.getId()).
-                stream().filter(w -> LocalDateTime.now().isAfter(w.getStart().plusMinutes(w.getDurationInMinutes())))
-                .toList();
+        List<Workout> workouts = user.getWorkouts();
+        
+        workouts = workouts.stream().
+                filter(w -> LocalDateTime.now().isAfter(w.getStart().plusMinutes(w.getDurationInMinutes())))
+                .sorted(Comparator.comparing(Workout::getStart, Comparator.reverseOrder())).toList();
 
-        return pastWorkouts.stream().map(workout -> WorkoutSummary.builder()
+        return workouts.stream().map(workout -> WorkoutSummary.builder()
                 .workoutName(workout.getName())
                 .workoutStart(workout.getStart())
                 .workoutDuration(workout.getDurationInMinutes())
                 .build()).toList();
 
-
     }
 
+
     public Workout addWorkout(Workout workout, User user) {
-        List<Workout> workouts = workoutRepository.findAllByUserId(user.getId());
+        List<Workout> workouts = user.getWorkouts();
         if (checkIfWorkoutTimeIsValid(workouts, workout)) {
-            workout.setUser(user);
+            user.addWorkout(workout);
         }
 
         return workoutRepository.save(workout);
@@ -56,28 +51,28 @@ public class  WorkoutService {
     }
 
     public void deleteWorkout(Long workoutId, User user) {
-        List<Workout> workouts = workoutRepository.findAllByUserId(user.getId());
-        long count = workouts.stream().map(Workout::getId).
-                filter(id -> id.longValue() == workoutId.longValue()).count();
-        if (count == 0L)
-            throw new WorkoutNotFoundException(workoutId);
-        workoutRepository.deleteById(workoutId);
+        List<Workout> workouts = user.getWorkouts();
+        Workout workoutToBeDeleted = workouts.stream()
+                .filter(w -> w.getId().longValue() == workoutId)
+                .findFirst().orElseThrow(() -> new WorkoutNotFoundException(workoutId));
 
+        user.deleteWorkout(workoutToBeDeleted);
+        workoutRepository.deleteById(workoutId);
     }
 
     public Workout updateWorkout(Workout workout, User user) {
-        if(workout.getId() == null) {
+        if (workout.getId() == null) {
             throw new InvalidWorkoutDataException("A workout must have a valid workout id.");
         }
 
-        Optional<Workout> optionalWorkout =  workoutRepository.findAllByUserId(user.getId()).stream().
+        Optional<Workout> optionalWorkout = user.getWorkouts().stream().
                 filter(w -> w.getId().longValue() == workout.getId().longValue()).findFirst();
 
         Workout existingWorkout = optionalWorkout.orElseThrow(
                 () -> new WorkoutNotFoundException(workout.getId())
         );
 
-        if(workout.getName() != null) {
+        if (workout.getName() != null) {
             existingWorkout.setName(workout.getName());
         }
 
@@ -86,8 +81,8 @@ public class  WorkoutService {
         }
 
         if (workout.getStart() != null) {
-            List<Workout> otherWorkouts = workoutRepository.findAllByUserId(user.getId())
-                            .stream().filter(w -> w.getId().longValue() != workout.getId().longValue()).toList();
+            List<Workout> otherWorkouts = user.getWorkouts().stream()
+                    .filter(w -> w.getId().longValue() != workout.getId().longValue()).toList();
             checkIfWorkoutTimeIsValid(otherWorkouts, workout);
             existingWorkout.setStart(workout.getStart());
             existingWorkout.setDurationInMinutes(workout.getDurationInMinutes());
@@ -100,7 +95,6 @@ public class  WorkoutService {
         return workoutRepository.save(existingWorkout);
 
     }
-
 
 
     private boolean checkIfWorkoutTimeIsValid(List<Workout> workouts, Workout newWorkout) {
