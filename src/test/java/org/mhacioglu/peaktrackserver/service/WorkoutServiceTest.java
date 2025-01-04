@@ -124,6 +124,7 @@ public class WorkoutServiceTest {
         currentUser.addWorkout(w1);
         currentUser.addWorkout(w2);
 
+
         List<WorkoutSummary> pastWorkouts = workoutService.listAllPastWorkouts(currentUser);
 
         assertEquals(3, pastWorkouts.size());

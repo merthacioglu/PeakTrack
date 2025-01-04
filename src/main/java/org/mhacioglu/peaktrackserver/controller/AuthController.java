@@ -7,7 +7,6 @@ import org.mhacioglu.peaktrackserver.dto.RegisterUserDto;
 import org.mhacioglu.peaktrackserver.model.User;
 import org.mhacioglu.peaktrackserver.service.AuthenticationService;
 import org.mhacioglu.peaktrackserver.service.JwtService;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,10 +25,6 @@ public class AuthController {
     @PostMapping("/signup")
     public ResponseEntity<User> register(@RequestBody RegisterUserDto registerUserDto) {
         User registeredUser = authService.signUp(registerUserDto);
-        if (registeredUser == null) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).build();
-        }
-
         return ResponseEntity.ok(registeredUser);
     }
 

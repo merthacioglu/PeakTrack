@@ -21,7 +21,6 @@ public class AuthenticationService {
     private final AuthenticationManager authenticationManager;
 
 
-
     public AuthenticationService(UserRepository userRepository,
                                  PasswordEncoder passwordEncoder,
                                  AuthenticationManager authenticationManager) {
@@ -52,16 +51,15 @@ public class AuthenticationService {
 
     public User authenticate(LoginUserDto loginUserDto) {
         authenticationManager.authenticate(
-          new UsernamePasswordAuthenticationToken(
-                  loginUserDto.getUsername(),
-                  loginUserDto.getPassword()
-          )
+                new UsernamePasswordAuthenticationToken(
+                        loginUserDto.getUsername(),
+                        loginUserDto.getPassword()
+                )
         );
 
         return userRepository.findByUsername(loginUserDto.getUsername())
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
-
 
 
 }

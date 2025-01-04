@@ -56,7 +56,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(UsernameAlreadyExistsException.class)
     public ProblemDetail handleExistingUsernameException(UsernameAlreadyExistsException exception) {
-        return ProblemDetail.forStatusAndDetail(HttpStatusCode.valueOf(400),
+        return ProblemDetail.forStatusAndDetail(HttpStatusCode.valueOf(409),
                 exception.getMessage());
 
     }

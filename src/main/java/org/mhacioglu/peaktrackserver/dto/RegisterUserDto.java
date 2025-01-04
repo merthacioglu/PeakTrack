@@ -1,11 +1,13 @@
 package org.mhacioglu.peaktrackserver.dto;
 
 import jakarta.validation.constraints.NotNull;
+import lombok.Builder;
 import lombok.Data;
 import org.mhacioglu.peaktrackserver.model.User.Gender;
 import org.mhacioglu.peaktrackserver.validation.ValidPassword;
 
 @Data
+@Builder
 public class RegisterUserDto {
     private String username;
 
