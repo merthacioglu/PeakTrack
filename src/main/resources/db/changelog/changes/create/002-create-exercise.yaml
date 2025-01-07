@@ -1,0 +1,58 @@
+# db/changelog/changes/002-create-exercise.yaml
+databaseChangeLog:
+  - changeSet:
+      id: create_exercise-1
+      author: mert
+      preConditions:
+        - onFail: MARK_RAN
+          not:
+            tableExists:
+              tableName: exercise
+      changes:
+        - createTable:
+            tableName: exercise
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: varchar(255)
+              # Changed to use MySQL ENUM type directly
+              - column:
+                  name: category
+                  type: ENUM('CARDIO', 'STRENGTH', 'FLEX', 'BALANCE')
+                  constraints:
+                    nullable: false
+              # Changed to use MySQL ENUM type directly
+              - column:
+                  name: muscle_group
+                  type: ENUM('CHEST', 'BACK', 'SHOULDERS', 'ARMS', 'QUADS', 'HAMSTRINGS', 'GLUTES', 'CALVES', 'ABS', 'OBLIQUES')
+              - column:
+                  name: sets
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: repetitions
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: weight
+                  type: int
+        # Removed redundant CHECK constraints for enums since we're using MySQL ENUM type
+        # Add check constraints for minimum values using backticks
+        - sql:
+            sql: ALTER TABLE `exercise` ADD CONSTRAINT `chk_sets_min` CHECK (sets >= 1)
+        - sql:
+            sql: ALTER TABLE `exercise` ADD CONSTRAINT `chk_repetitions_min` CHECK (repetitions >= 1)

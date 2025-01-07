@@ -38,17 +38,21 @@ public class Workout implements Serializable {
     @Min(10)
     private int  durationInMinutes;
 
-    @NotNull
     @ManyToMany
     @JoinTable(
             name = "workout_exercises",
             joinColumns = @JoinColumn(name = "workout_id"),
-            inverseJoinColumns = @JoinColumn(name = "exercise_id")
+            inverseJoinColumns = @JoinColumn(name = "exercise_id"),
+            uniqueConstraints = @UniqueConstraint(
+                    name = "pk_workout_exercises",
+                    columnNames = {"workout_id", "exercise_id"}
+            )
     )
     private List<Exercise> exercises;
 
     @ManyToOne(optional = false)
     private User user;
 
+    private String comment;
 
 }

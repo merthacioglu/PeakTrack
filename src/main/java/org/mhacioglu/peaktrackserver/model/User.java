@@ -41,6 +41,8 @@ public class User implements Serializable, UserDetails {
     @NotNull
     private String lastName;
 
+    @NotNull
+    @Column(unique = true)
     private String email;
 
     private String phone;
@@ -71,6 +73,7 @@ public class User implements Serializable, UserDetails {
 
     public User() {
         this.workouts = new ArrayList<>();
+
     }
 
     @Override

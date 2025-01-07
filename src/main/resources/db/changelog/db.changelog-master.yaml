@@ -1,0 +1,39 @@
+databaseChangeLog:
+  - property:
+      name: now
+      value: now()
+      dbms: mysql,postgresql,h2
+
+  - include:
+      file: changes/create/001-create-user.yaml
+      relativeToChangelogFile: true
+
+  - include:
+      file: changes/create/002-create-exercise.yaml
+      relativeToChangelogFile: true
+
+  - include:
+      file: changes/create/003-create-workout.yaml
+      relativeToChangelogFile: true
+
+
+  - include:
+      file: changes/create/004-create-blacklisted-token.yaml
+      relativeToChangelogFile: true
+
+  - include:
+      file: changes/insert/001-insert-user.yaml
+      relativeToChangelogFile: true
+
+  - include:
+       file: changes/insert/002-insert-exercise.yaml
+       relativeToChangelogFile: true
+  - include:
+      file: changes/insert/003-insert-workout.yaml
+      relativeToChangelogFile: true
+
+  - include:
+      file: ./20250107142205_changelog.yaml
+      relativeToChangelogFile: true
+
+

@@ -8,14 +8,20 @@ spring:
   jpa:
     show-sql: true
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
     properties:
       hibernate:
         format_sql: true
-    defer-datasource-initialization: true
+    defer-datasource-initialization: false
   sql:
     init:
       mode: always
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+    enabled: true
+    default-schema: public
+    drop-first: false
+    contexts: ${SPRING_PROFILES_ACTIVE:development}
 server:
   port: 9090
 

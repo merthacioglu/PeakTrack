@@ -1,0 +1,35 @@
+databaseChangeLog:
+- changeSet:
+    id: 1736259730978-2
+    author: mert (generated)
+    changes:
+    - addColumn:
+        columns:
+        - column:
+            name: comment
+            type: varchar(255)
+        tableName: workout
+- changeSet:
+    id: 1736259730978-3
+    author: mert (generated)
+    changes:
+    - addUniqueConstraint:
+        columnNames: workout_id, exercise_id
+        constraintName: pk_workout_exercises
+        tableName: workout_exercises
+- changeSet:
+    id: 1736259730978-4
+    author: mert (generated)
+    changes:
+    - dropPrimaryKey:
+        constraintName: PRIMARY
+        tableName: workout_exercises
+- changeSet:
+    id: 1736259730978-1
+    author: mert (generated)
+    changes:
+    - modifyDataType:
+        columnName: additional_notes
+        newDataType: varchar(255)
+        tableName: user
+

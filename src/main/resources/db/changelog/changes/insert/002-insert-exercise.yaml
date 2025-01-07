@@ -1,0 +1,84 @@
+databaseChangeLog:
+  - changeSet:
+      id: insert_exercises-1
+      author: mert
+      comment: Insert initial exercise data
+      changes:
+        - insert:
+            tableName: exercise
+            columns:
+              - column:
+                  name: id
+                  valueNumeric: 1
+              - column:
+                  name: name
+                  value: Push-up
+              - column:
+                  name: description
+                  value: Bodyweight exercise focusing on chest and arms
+              - column:
+                  name: category
+                  value: STRENGTH
+              - column:
+                  name: muscle_group
+                  value: CHEST
+              - column:
+                  name: sets
+                  valueNumeric: 3
+              - column:
+                  name: repetitions
+                  valueNumeric: 15
+              - column:
+                  name: weight
+                  valueNumeric: 0
+        - insert:
+            tableName: exercise
+            columns:
+              - column:
+                  name: id
+                  valueNumeric: 2
+              - column:
+                  name: name
+                  value: Squat
+              - column:
+                  name: description
+                  value: Strength exercise targeting legs
+              - column:
+                  name: category
+                  value: STRENGTH
+              - column:
+                  name: muscle_group
+                  value: QUADS
+              - column:
+                  name: sets
+                  valueNumeric: 4
+              - column:
+                  name: repetitions
+                  valueNumeric: 12
+              - column:
+                  name: weight
+                  valueNumeric: 50
+        - insert:
+            tableName: exercise
+            columns:
+              - column:
+                  name: id
+                  valueNumeric: 3
+              - column:
+                  name: name
+                  value: Running
+              - column:
+                  name: description
+                  value: Cardio exercise for endurance
+              - column:
+                  name: category
+                  value: CARDIO
+              - column:
+                  name: sets
+                  valueNumeric: 1
+              - column:
+                  name: repetitions
+                  valueNumeric: 30
+              - column:
+                  name: weight
+                  valueNumeric: 0

@@ -1,0 +1,69 @@
+databaseChangeLog:
+  - changeSet:
+      id: insert-workout-1
+      author: mert
+      comment: Insert initial workout data
+      changes:
+        - insert:
+            tableName: workout
+            columns:
+              - column:
+                  name: id
+                  valueNumeric: 1
+              - column:
+                  name: name
+                  value: Morning Strength
+              - column:
+                  name: start
+                  value: "2024-12-10 06:30:00"
+              - column:
+                  name: duration_in_minutes
+                  valueNumeric: 60
+              - column:
+                  name: user_id
+                  valueNumeric: 1
+        - insert:
+            tableName: workout
+            columns:
+              - column:
+                  name: id
+                  valueNumeric: 2
+              - column:
+                  name: name
+                  value: Evening Cardio
+              - column:
+                  name: start
+                  value: "2024-12-10 18:00:00"
+              - column:
+                  name: duration_in_minutes
+                  valueNumeric: 45
+              - column:
+                  name: user_id
+                  valueNumeric: 2
+        - insert:
+            tableName: workout_exercises
+            columns:
+              - column:
+                  name: workout_id
+                  valueNumeric: 1
+              - column:
+                  name: exercise_id
+                  valueNumeric: 1
+        - insert:
+            tableName: workout_exercises
+            columns:
+              - column:
+                  name: workout_id
+                  valueNumeric: 1
+              - column:
+                  name: exercise_id
+                  valueNumeric: 2
+        - insert:
+            tableName: workout_exercises
+            columns:
+              - column:
+                  name: workout_id
+                  valueNumeric: 1
+              - column:
+                  name: exercise_id
+                  valueNumeric: 3

@@ -1,0 +1,26 @@
+# db/changelog/changes/004-create-blacklisted-token.yaml
+databaseChangeLog:
+  - changeSet:
+      id: crate_blacklisted-token-1
+      author: mert
+      preConditions:
+        - onFail: MARK_RAN
+          not:
+            tableExists:
+              tableName: blacklisted_token
+      changes:
+        - createTable:
+            tableName: blacklisted_token
+            columns:
+              - column:
+                  name: token
+                  type: varchar(255)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              # Changed to use MySQL datetime type explicitly
+              - column:
+                  name: expiry_date
+                  type: timestamp
+                  constraints:
+                    nullable: false

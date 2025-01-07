@@ -1,0 +1,96 @@
+databaseChangeLog:
+  # Creating the user table with all required fields and their constraints
+  - changeSet:
+      id: create_user-1
+      author: mert
+      preConditions:
+        - onFail: MARK_RAN
+          not:
+            tableExists:
+              tableName: user
+      changes:
+        - createTable:
+            tableName: user
+            columns:
+              # Primary key with auto-increment
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+
+              # Authentication and personal information fields
+              - column:
+                  name: username
+                  type: varchar(20)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: password
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: last_name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: email
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+                    unique: true
+
+              # Optional contact information
+              - column:
+                  name: phone
+                  type: varchar(255)
+                  constraints:
+                    nullable: true
+
+              # Physical characteristics and demographic information
+              - column:
+                  name: age
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  # In MySQL, we define the enum directly in the column
+                  name: gender
+                  type: ENUM('MALE', 'FEMALE', 'TRANSGENDER', 'INTERSEX')
+                  constraints:
+                    nullable: false
+              - column:
+                  name: height
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: weight
+                  type: int
+                  constraints:
+                    nullable: false
+
+              # Additional information
+              - column:
+                  name: additional_notes
+                  type: text
+                  constraints:
+                    nullable: true
+
+  # Adding the age range constraint
+  - changeSet:
+      id: 202501053_add_age_constraint
+      author: mert
+      changes:
+        - sql:
+            sql: ALTER TABLE `user` ADD CONSTRAINT age_check CHECK (age >= 10 AND age <= 80);

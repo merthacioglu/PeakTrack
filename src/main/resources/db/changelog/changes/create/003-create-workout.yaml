@@ -1,0 +1,78 @@
+# db/changelog/changes/003-create-workout.yaml
+databaseChangeLog:
+  - changeSet:
+      id: create_workout-1
+      author: mert
+      preConditions:
+        - onFail: MARK_RAN
+          not:
+            tableExists:
+              tableName: workout
+      changes:
+        - createTable:
+            tableName: workout
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              # Changed to use MySQL datetime type explicitly
+              - column:
+                  name: start
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: duration_in_minutes
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_workout_user
+                    references: user(id)
+        - createTable:
+            tableName: workout_exercises
+            columns:
+              - column:
+                  name: workout_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: exercise_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+        - addPrimaryKey:
+            tableName: workout_exercises
+            columnNames: workout_id, exercise_id
+            constraintName: pk_workout_exercises
+        - addForeignKeyConstraint:
+            baseTableName: workout_exercises
+            baseColumnNames: workout_id
+            referencedTableName: workout
+            referencedColumnNames: id
+            constraintName: fk_workout_exercises_workout
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            baseTableName: workout_exercises
+            baseColumnNames: exercise_id
+            referencedTableName: exercise
+            referencedColumnNames: id
+            constraintName: fk_workout_exercises_exercise
+            onDelete: CASCADE
+        # Added backticks for MySQL naming convention
+        - sql:
+            sql: ALTER TABLE `workout` ADD CONSTRAINT `chk_duration_min` CHECK (duration_in_minutes >= 10)
