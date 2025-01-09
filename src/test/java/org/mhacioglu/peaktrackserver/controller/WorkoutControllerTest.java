@@ -23,6 +23,7 @@ import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -55,7 +56,9 @@ public class WorkoutControllerTest {
 
     @Autowired
     private ObjectMapper objectMapper;
-
+    private Workout pastWorkout;
+    private Workout ongoingWorkout;
+    private Workout futureWorkout;
     private User user;
 
     @BeforeEach
@@ -64,7 +67,7 @@ public class WorkoutControllerTest {
         user.setId(1L);
         user.setUsername("username");
 
-        Workout pastWorkout = Workout.builder()
+        pastWorkout = Workout.builder()
                 .id(1L)
                 .name("Workout 1")
                 .start(LocalDateTime.now().minusDays(1))
@@ -73,7 +76,7 @@ public class WorkoutControllerTest {
                 .build();
 
 
-        Workout ongoingWorkout = Workout.builder()
+        ongoingWorkout = Workout.builder()
                 .id(2L)
                 .name("Workout 2")
                 .start(LocalDateTime.now().minusMinutes(30))
@@ -81,7 +84,7 @@ public class WorkoutControllerTest {
                 .user(user)
                 .build();
 
-        Workout futureWorkout = Workout.builder()
+        futureWorkout = Workout.builder()
                 .id(3L)
                 .name("Workout 3")
                 .start(LocalDateTime.now().plusDays(1))
@@ -96,39 +99,109 @@ public class WorkoutControllerTest {
         when(userService.getCurrentUser()).thenReturn(user);
     }
 
-    @Test
-    @DisplayName("Get all workouts for the current user")
-    void getAllWorkouts_ShouldReturnWorkoutList() throws Exception {
+        @Test
+        @DisplayName("Get all workouts for the current user " +
+                "in the given time window")
+        void getAllWorkouts_ShouldReturnWorkoutList() throws Exception {
+            LocalDateTime tenHoursAgo = LocalDateTime.now().minusHours(10);
+            LocalDateTime tenHoursAfter = LocalDateTime.now().plusHours(10);
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+            String from = tenHoursAgo.format(formatter);
+            String to = tenHoursAfter.format(formatter);
+            when(workoutService.getWorkoutsBetween(eq(null), eq(null), eq(user)))
+                    .thenReturn(List.of(futureWorkout, ongoingWorkout, pastWorkout));
+
+            mockMvc.perform(get("/api/workout/all")
+                            .accept(MediaType.APPLICATION_JSON))
+
+                    .andExpect(status().isOk())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$", hasSize(3)))
+                    .andExpect(jsonPath("$[0].id").value(3))
+                    .andExpect(jsonPath("$[1].id").value(2))
+                    .andExpect(jsonPath("$[2].id").value(1));
+
+            when(workoutService.getWorkoutsBetween(
+                    argThat(date -> date != null && !date.isAfter(tenHoursAgo.plusMinutes(1))
+                            && !date.isBefore(tenHoursAgo.minusMinutes(1))),
+                    argThat(date -> date != null && !date.isAfter(tenHoursAfter.plusMinutes(1))
+                            && !date.isBefore(tenHoursAfter.minusMinutes(1))),
+                    eq(user)))
+                    .thenReturn(List.of(ongoingWorkout));
+
+            mockMvc.perform(get("/api/workout/all")
+                            .param("from", from)
+                            .param("to", to)
+                            .accept(MediaType.APPLICATION_JSON))
+
+                    .andExpect(status().isOk())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$", hasSize(1)))
+                    .andExpect(jsonPath("$[0].id").value(2));
+
+            when(workoutService.getWorkoutsBetween(
+                    argThat(date -> date != null && !date.isAfter(tenHoursAgo.plusMinutes(1))
+                            && !date.isBefore(tenHoursAgo.minusMinutes(1))),
+                    eq(null),
+                    eq(user)))
+                    .thenReturn(List.of(futureWorkout, ongoingWorkout));
 
 
-        mockMvc.perform(get("/api/workout/getAll")
-                        .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$", hasSize(3)))
-                .andExpect(jsonPath("$[0].id").value(1))
-                .andExpect(jsonPath("$[1].id").value(2))
-                .andExpect(jsonPath("$[2].id").value(3));
+            mockMvc.perform(get("/api/workout/all")
+                            .param("from", from)
+                            .accept(MediaType.APPLICATION_JSON))
 
-        verify(userService, times(1)).getCurrentUser();
+                    .andExpect(status().isOk())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$", hasSize(2)))
+                    .andExpect(jsonPath("$[0].id").value(3))
+                    .andExpect(jsonPath("$[1].id").value(2));
+
+
+            when(workoutService.getWorkoutsBetween(
+                    eq(null),
+                    argThat(date -> date != null && !date.isAfter(tenHoursAfter.plusMinutes(1))
+                            && !date.isBefore(tenHoursAfter.minusMinutes(1))),
+                    eq(user)))
+                    .thenReturn(List.of(ongoingWorkout, pastWorkout));
+
+
+            mockMvc.perform(get("/api/workout/all")
+                            .param("to", to)
+                            .accept(MediaType.APPLICATION_JSON))
+
+                    .andExpect(status().isOk())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$", hasSize(2)))
+                    .andExpect(jsonPath("$[0].id").value(2))
+                    .andExpect(jsonPath("$[1].id").value(1));
+
+
+            when(workoutService.getWorkoutsBetween(
+                    argThat(date -> date != null && !date.isAfter(tenHoursAfter.plusMinutes(1))
+                            && !date.isBefore(tenHoursAfter.minusMinutes(1))),
+                    argThat(date -> date != null && !date.isAfter(tenHoursAgo.plusMinutes(1))
+                            && !date.isBefore(tenHoursAgo.minusMinutes(1))),
+                    eq(user))).thenThrow(new InvalidWorkoutDataException("Invalid date"));
+
+
+            mockMvc.perform(get("/api/workout/all")
+                            .param("from", to)
+                            .param("to", from)
+                            .accept(MediaType.APPLICATION_JSON))
+
+                    .andExpect(status().isBadRequest())
+                    .andExpect(result -> {
+                        assertInstanceOf(InvalidWorkoutDataException.class, result.getResolvedException());
+                        String message = result.getResolvedException().getMessage();
+                        assertTrue(message.contains("Invalid date"));
+                    });
+
+            verify(userService, times(5)).getCurrentUser();
+            verify(workoutService, times(5)).getWorkoutsBetween(any(), any(), any());
 
     }
 
-    @Test
-    @DisplayName("Get all active workouts which will end " +
-            "in future sorted from soonest to latest")
-    public void getAllActiveWorkouts_ShouldReturnWorkoutsThatEndAfterNow() throws Exception {
-
-        mockMvc.perform(get("/api/workout/getActiveWorkouts")
-                        .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$", hasSize(2)))
-                .andExpect(jsonPath("$[0].id").value(2L))
-                .andExpect(jsonPath("$[1].id").value(3L));
-
-        verify(userService, times(1)).getCurrentUser();
-    }
 
     @Test
     @DisplayName("Create a new workout and return the created workout")

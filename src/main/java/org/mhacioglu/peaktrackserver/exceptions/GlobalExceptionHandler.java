@@ -19,10 +19,6 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ProblemDetail handleSecurityException(Exception exception) {
 
-        // TODO send this stack trace to an observability tool
-        exception.printStackTrace();
-
-
         if (exception instanceof BadCredentialsException) {
             ProblemDetail detail = ProblemDetail.forStatusAndDetail(HttpStatusCode.valueOf(401), exception.getMessage());
             detail.setProperty("reason", "Username or password is incorrect.");

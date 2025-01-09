@@ -10,9 +10,11 @@ import org.mhacioglu.peaktrackserver.repository.WorkoutRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class WorkoutService {
@@ -40,6 +42,26 @@ public class WorkoutService {
     }
 
 
+
+    public List<Workout> getWorkoutsBetween(LocalDateTime from, LocalDateTime to, User user) {
+        List<Workout> workouts = user.getWorkouts();
+        if (from != null && to != null && from.isAfter(to)) {
+            throw new InvalidWorkoutDataException("Beginning date cannot be after end date");
+        }
+        if (from != null) {
+            workouts = workouts.stream().filter(w -> w.getStart().isAfter(from))
+                    .collect(Collectors.toCollection(ArrayList::new));
+
+        }
+        if (to != null) {
+            workouts = workouts.stream().filter(w -> w.getStart().isBefore(to))
+                    .collect(Collectors.toCollection(ArrayList::new));
+        }
+        workouts.sort(Comparator.comparing(Workout::getStart, Comparator.reverseOrder()));
+        return workouts;
+    }
+
+
     public Workout addWorkout(Workout workout, User user) {
         List<Workout> workouts = user.getWorkouts();
         if (checkIfWorkoutTimeIsValid(workouts, workout)) {
@@ -49,6 +71,7 @@ public class WorkoutService {
         return workoutRepository.save(workout);
 
     }
+
 
     public void deleteWorkout(Long workoutId, User user) {
         List<Workout> workouts = user.getWorkouts();

@@ -101,6 +101,35 @@ public class WorkoutServiceTest {
 
     }
 
+    @Test
+    @DisplayName("Returns the workouts of the user between the given time window")
+    public void listAllWorkoutsBetweenDates() {
+        LocalDateTime oneHourAgo = LocalDateTime.now().minusHours(1);
+        LocalDateTime tenHoursLater = LocalDateTime.now().plusHours(10);
+        List<Workout> workouts = workoutService.getWorkoutsBetween(null, null, currentUser);
+
+        assertEquals(3, workouts.size());
+        assertTrue(workouts.getFirst().getStart().isAfter(workouts.get(1).getStart()));
+        assertTrue(workouts.get(1).getStart().isAfter(workouts.get(2).getStart()));
+
+        workouts = workoutService.getWorkoutsBetween(oneHourAgo, null, currentUser);
+
+        assertEquals(2, workouts.size());
+        assertTrue(workouts.getFirst().getStart().isAfter(workouts.get(1).getStart()));
+
+        workouts = workoutService.getWorkoutsBetween(null, tenHoursLater, currentUser);
+
+        assertEquals(2, workouts.size());
+        assertTrue(workouts.getFirst().getStart().isAfter(workouts.get(1).getStart()));
+
+        workouts = workoutService.getWorkoutsBetween(oneHourAgo, tenHoursLater, currentUser);
+        assertEquals(1, workouts.size());
+        assertEquals(3L, workouts.getFirst().getId());
+
+        assertThrows(InvalidWorkoutDataException.class, () ->
+                workoutService.getWorkoutsBetween(tenHoursLater, oneHourAgo, currentUser));
+
+    }
 
     @Test
     @DisplayName("Return the list of workouts sorted by their start date which have ended in the past")
@@ -130,10 +159,10 @@ public class WorkoutServiceTest {
         assertEquals(3, pastWorkouts.size());
         for (int i = 0; i < pastWorkouts.size() - 1; i++) {
             LocalDateTime start1 = pastWorkouts.get(i).getWorkoutStart();
-            LocalDateTime start2 = pastWorkouts.get(i+1).getWorkoutStart();
+            LocalDateTime start2 = pastWorkouts.get(i + 1).getWorkoutStart();
 
             LocalDateTime end1 = start1.plusMinutes(pastWorkouts.get(i).getWorkoutDuration());
-            LocalDateTime end2 = start2.plusMinutes(pastWorkouts.get(i+1).getWorkoutDuration());
+            LocalDateTime end2 = start2.plusMinutes(pastWorkouts.get(i + 1).getWorkoutDuration());
 
             assertTrue(LocalDateTime.now().isAfter(end1) && LocalDateTime.now().isAfter(end2));
             assertTrue(start1.isAfter(start2));
@@ -230,7 +259,7 @@ public class WorkoutServiceTest {
                 .build();
 
         assertThrows(WorkoutTimeConflictException.class,
-               () -> workoutService.addWorkout(req, currentUser));
+                () -> workoutService.addWorkout(req, currentUser));
 
         verify(workoutRepository, never()).save(any(Workout.class));
 

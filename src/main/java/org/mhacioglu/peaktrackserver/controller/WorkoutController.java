@@ -1,6 +1,8 @@
 package org.mhacioglu.peaktrackserver.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -11,17 +13,18 @@ import org.mhacioglu.peaktrackserver.model.Workout;
 import org.mhacioglu.peaktrackserver.model.WorkoutSummary;
 import org.mhacioglu.peaktrackserver.service.UserService;
 import org.mhacioglu.peaktrackserver.service.WorkoutService;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.util.Comparator;
 import java.util.List;
 
 @RestController
-@RequestMapping( value = "/api/workout" )
+@RequestMapping(value = "/api/workout")
 public class WorkoutController {
 
     private final WorkoutService workoutService;
@@ -35,91 +38,91 @@ public class WorkoutController {
     }
 
     @Operation(
-            summary = "Get all workouts for authenticated user",
-            description = "Retrieves all workout records associated with the currently " +
-                    "authenticated user. Workouts are returned in chronological order " +
-                    "from newest to oldest."
+            summary = "Get workouts within a date range",
+            description = "Retrieves all workouts for the current user, optionally filtered by start and end dates. " +
+                    "If dates are provided, workouts are filtered to those starting between the given dates. " +
+                    "Results are sorted by start date in descending order (newest first)."
     )
     @ApiResponses(value = {
             @ApiResponse(
                     responseCode = "200",
-                    description = "Successfully retrieved the list of workouts",
+                    description = "Workouts successfully retrieved",
                     content = @Content(
                             mediaType = "application/json",
-                            schema = @Schema(type = "array", implementation = Workout.class)
+                            array = @ArraySchema(schema = @Schema(implementation = Workout.class))
                     )
             ),
             @ApiResponse(
-                    responseCode = "401",
-                    description = "User is unauthenticated",
-                    content = @Content
+                    responseCode = "400",
+                    description = "Invalid date parameters",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ProblemDetail.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Not authorized to access workouts",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ProblemDetail.class)
+                    )
             )
     })
-    @GetMapping(value = "/getAll")
-    public ResponseEntity<List<Workout>> all() {
-        User currentUser = userService.getCurrentUser();
-        List<Workout> workouts = currentUser.getWorkouts();
-        workouts.sort(Comparator.comparing(Workout::getStart));
+    @GetMapping(value = "/all")
+    public ResponseEntity<List<Workout>> all(
+            @Parameter(
+                    description = "Start date-time to filter workouts (inclusive). Format: yyyy-MM-dd HH:mm",
+                    example = "2024-01-09 14:30"
+            )
+            @RequestParam(value = "from", required = false)
+            @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm") LocalDateTime from,
+
+            @Parameter(
+                    description = "End date-time to filter workouts (inclusive). Format: yyyy-MM-dd HH:mm",
+                    example = "2024-01-09 16:30"
+            )
+            @RequestParam(value = "to", required = false)
+            @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm") LocalDateTime to) {
+
+        User user = userService.getCurrentUser();
+        List<Workout> workouts = workoutService.getWorkoutsBetween(from, to, user);
         return new ResponseEntity<>(workouts, HttpStatus.OK);
     }
 
     @Operation(
-            summary = "Get active workouts for authenticated user",
-            description = "Retrieves all unfinished workouts scheduled for the currently " +
-                    "authenticated user. The response is in chronological order from most recent to" +
-                    "the latest workout. An active workout is defined as one where " +
-                    "the start time and duration indicate a future time period. " +
-                    "This helps users track their upcoming workout schedule."
+            summary = "Generate workout summary report",
+            description = "Generates a comprehensive report of all past workouts for the currently authenticated user. " +
+                    "The report includes summarized information about each completed workout, making it suitable " +
+                    "for analysis and review of workout history. Each summary provides key metrics and statistics " +
+                    "about the workout session."
     )
     @ApiResponses(value = {
             @ApiResponse(
                     responseCode = "200",
-                    description = "Successfully retrieved the list of active workouts",
+                    description = "Report successfully generated",
                     content = @Content(
                             mediaType = "application/json",
-                            schema = @Schema(type = "array", implementation = Workout.class)
-                    )
-            ),
-            @ApiResponse(
-                    responseCode = "401",
-                    description = "User is not authenticated",
-                    content = @Content
-            )
-    })
-    @GetMapping(value = "/getActiveWorkouts")
-    public ResponseEntity<List<Workout>> activeWorkouts() {
-        User currentUser = userService.getCurrentUser();
-        List<Workout> workouts = currentUser.getWorkouts().stream()
-                .filter(w -> LocalDateTime.now().isBefore(w.getStart().plusMinutes(w.getDurationInMinutes())))
-                .sorted(Comparator.comparing(Workout::getStart)).toList();
-
-        return new ResponseEntity<>(workouts, HttpStatus.OK);
-    }
-
-    @Operation(
-            summary = "Generate workout progress report",
-            description = "Retrieves a comprehensive summary of all completed workouts for the " +
-                    "currently authenticated user. This endpoint helps users track their " +
-                    "fitness progress by providing detailed information about past workouts " +
-                    "The summaries are returned in chronological order, from most recent to oldest."
-    )
-    @ApiResponses(value = {
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Successfully generated the workout progress report",
-                    content = @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(
-                                    type = "array",
-                                    implementation = WorkoutSummary.class,
-                                    description = "List of workout summaries containing performance metrics and completion details"
+                            array = @ArraySchema(
+                                    schema = @Schema(implementation = WorkoutSummary.class)
                             )
                     )
             ),
             @ApiResponse(
-                    responseCode = "401",
-                    description = "User is not authenticated",
-                    content = @Content
+                    responseCode = "403",
+                    description = "Not authorized to access workout data",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ProblemDetail.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Internal server error while generating report",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ProblemDetail.class)
+                    )
             )
     })
     @GetMapping(value = "/generateReport")
@@ -127,8 +130,6 @@ public class WorkoutController {
         User currentUser = userService.getCurrentUser();
         return new ResponseEntity<>(workoutService.listAllPastWorkouts(currentUser), HttpStatus.OK);
     }
-
-
 
 
     @Operation(
@@ -259,14 +260,10 @@ public class WorkoutController {
             )
     })
     @PutMapping(value = "/update", consumes = "application/json")
-    public ResponseEntity<Workout> update (@RequestBody Workout workout) {
+    public ResponseEntity<Workout> update(@RequestBody Workout workout) {
         User currentUser = userService.getCurrentUser();
         return new ResponseEntity<>(workoutService.updateWorkout(workout, currentUser), HttpStatus.OK);
     }
-
-
-
-
 
 
 }
