@@ -1,10 +1,12 @@
 spring:
+  profiles:
+    active: dev
   application:
     name: peaktrack-server
   datasource:
-    url: jdbc:mysql://localhost:3306/peaktrack-db?createDatabaseIfNotExist=true
-    username: root
-    password: MertMert96
+    url: local_db_url
+    username: local_db_username
+    password: local_db_password
   jpa:
     show-sql: true
     hibernate:
@@ -27,5 +29,5 @@ server:
 
 security:
   jwt:
-    secret-key: 4875ee092fb6821c8c69d4fe872c77b798046020bcdbc85d00d5d370f21e469d
-    expiration-time: 3600000
+    secret-key: jwt_secret
+    expiration-time:  ${JWT_EXPIRATION_TIME:3600000}
