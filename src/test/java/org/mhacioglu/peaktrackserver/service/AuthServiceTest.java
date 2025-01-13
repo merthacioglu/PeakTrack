@@ -9,7 +9,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mhacioglu.peaktrackserver.dto.LoginUserDto;
 import org.mhacioglu.peaktrackserver.dto.RegisterUserDto;
 import org.mhacioglu.peaktrackserver.exceptions.UsernameAlreadyExistsException;
-import org.mhacioglu.peaktrackserver.model.User;
+import org.mhacioglu.peaktrackserver.model.RegisteredUser;
 import org.mhacioglu.peaktrackserver.repository.UserRepository;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -64,30 +64,30 @@ public class AuthServiceTest {
         when(passwordEncoder.encode(registerUserDto.getPassword()))
                 .thenReturn(encodedPassword);
 
-        User expectedUser = new User();
-        expectedUser.setId(1L);
-        expectedUser.setUsername(registerUserDto.getUsername());
-        expectedUser.setPassword(encodedPassword);
-        when(userRepository.save(any(User.class))).thenReturn(expectedUser);
+        RegisteredUser expectedRegisteredUser = new RegisteredUser();
+        expectedRegisteredUser.setId(1L);
+        expectedRegisteredUser.setUsername(registerUserDto.getUsername());
+        expectedRegisteredUser.setPassword(encodedPassword);
+        when(userRepository.save(any(RegisteredUser.class))).thenReturn(expectedRegisteredUser);
 
-        User resultUser = authService.signUp(registerUserDto);
+        RegisteredUser resultRegisteredUser = authService.signUp(registerUserDto);
 
-        assertNotNull(resultUser);
-        assertEquals(registerUserDto.getUsername(), expectedUser.getUsername());
-        assertEquals(encodedPassword, resultUser.getPassword());
+        assertNotNull(resultRegisteredUser);
+        assertEquals(registerUserDto.getUsername(), expectedRegisteredUser.getUsername());
+        assertEquals(encodedPassword, resultRegisteredUser.getPassword());
 
         verify(userRepository, times(1))
                 .findByUsername(registerUserDto.getUsername());
         verify(passwordEncoder, times(1))
                 .encode(registerUserDto.getPassword());
-        verify(userRepository, times(1)).save(any(User.class));
+        verify(userRepository, times(1)).save(any(RegisteredUser.class));
 
     }
 
     @Test
     @DisplayName("Signing up with already existing username")
     public void signUpWithFailure_ShouldReturnUsernameAlreadyExistsException() {
-        User registeredUser = new User();
+        RegisteredUser registeredUser = new RegisteredUser();
         registeredUser.setId(2L);
         registeredUser.setUsername(registerUserDto.getUsername());
         registeredUser.setPassword("p4$$w0rd");
@@ -102,7 +102,7 @@ public class AuthServiceTest {
                 .findByUsername(registerUserDto.getUsername());
 
         verify(passwordEncoder, never()).encode(any(String.class));
-        verify(userRepository, never()).save(any(User.class));
+        verify(userRepository, never()).save(any(RegisteredUser.class));
 
     }
 
@@ -113,9 +113,9 @@ public class AuthServiceTest {
         LoginUserDto loginUserDto = new LoginUserDto
                 ("testUser", "testPassword");
 
-        User expectedUser = new User();
-        expectedUser.setUsername(loginUserDto.getUsername());
-        expectedUser.setPassword("encodedTestPassword");
+        RegisteredUser expectedRegisteredUser = new RegisteredUser();
+        expectedRegisteredUser.setUsername(loginUserDto.getUsername());
+        expectedRegisteredUser.setPassword("encodedTestPassword");
 
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
                 .thenReturn(new UsernamePasswordAuthenticationToken(
@@ -124,13 +124,13 @@ public class AuthServiceTest {
                 ));
 
         when(userRepository.findByUsername(loginUserDto.getUsername()))
-                .thenReturn(Optional.of(expectedUser));
+                .thenReturn(Optional.of(expectedRegisteredUser));
 
-        User authenticatedUser = authService.authenticate(loginUserDto);
+        RegisteredUser authenticatedRegisteredUser = authService.authenticate(loginUserDto);
 
-        assertNotNull(authenticatedUser);
-        assertEquals(expectedUser.getUsername(), authenticatedUser.getUsername());
-        assertEquals(expectedUser.getPassword(), authenticatedUser.getPassword());
+        assertNotNull(authenticatedRegisteredUser);
+        assertEquals(expectedRegisteredUser.getUsername(), authenticatedRegisteredUser.getUsername());
+        assertEquals(expectedRegisteredUser.getPassword(), authenticatedRegisteredUser.getPassword());
 
         verify(authenticationManager, times(1))
                 .authenticate(any(UsernamePasswordAuthenticationToken.class));

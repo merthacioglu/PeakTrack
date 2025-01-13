@@ -31,5 +31,5 @@ databaseChangeLog:
     - modifyDataType:
         columnName: additional_notes
         newDataType: varchar(255)
-        tableName: user
+        tableName: registered_user
 

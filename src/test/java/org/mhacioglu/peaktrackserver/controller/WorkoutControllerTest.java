@@ -8,7 +8,7 @@ import org.mhacioglu.peaktrackserver.config.JwtAuthenticationFilter;
 import org.mhacioglu.peaktrackserver.exceptions.InvalidWorkoutDataException;
 import org.mhacioglu.peaktrackserver.exceptions.WorkoutNotFoundException;
 import org.mhacioglu.peaktrackserver.exceptions.WorkoutTimeConflictException;
-import org.mhacioglu.peaktrackserver.model.User;
+import org.mhacioglu.peaktrackserver.model.RegisteredUser;
 import org.mhacioglu.peaktrackserver.model.Workout;
 import org.mhacioglu.peaktrackserver.service.JwtService;
 import org.mhacioglu.peaktrackserver.service.UserService;
@@ -59,20 +59,20 @@ public class WorkoutControllerTest {
     private Workout pastWorkout;
     private Workout ongoingWorkout;
     private Workout futureWorkout;
-    private User user;
+    private RegisteredUser registeredUser;
 
     @BeforeEach
     public void setup() {
-        user = new User();
-        user.setId(1L);
-        user.setUsername("username");
+        registeredUser = new RegisteredUser();
+        registeredUser.setId(1L);
+        registeredUser.setUsername("username");
 
         pastWorkout = Workout.builder()
                 .id(1L)
                 .name("Workout 1")
                 .start(LocalDateTime.now().minusDays(1))
                 .durationInMinutes(60)
-                .user(user)
+                .user(registeredUser)
                 .build();
 
 
@@ -81,7 +81,7 @@ public class WorkoutControllerTest {
                 .name("Workout 2")
                 .start(LocalDateTime.now().minusMinutes(30))
                 .durationInMinutes(90)
-                .user(user)
+                .user(registeredUser)
                 .build();
 
         futureWorkout = Workout.builder()
@@ -89,14 +89,14 @@ public class WorkoutControllerTest {
                 .name("Workout 3")
                 .start(LocalDateTime.now().plusDays(1))
                 .durationInMinutes(60)
-                .user(user)
+                .user(registeredUser)
                 .build();
 
 
-        user.setWorkouts(new ArrayList<>(List.of(ongoingWorkout, futureWorkout, pastWorkout)));
+        registeredUser.setWorkouts(new ArrayList<>(List.of(ongoingWorkout, futureWorkout, pastWorkout)));
 
 
-        when(userService.getCurrentUser()).thenReturn(user);
+        when(userService.getCurrentUser()).thenReturn(registeredUser);
     }
 
         @Test
@@ -108,7 +108,7 @@ public class WorkoutControllerTest {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
             String from = tenHoursAgo.format(formatter);
             String to = tenHoursAfter.format(formatter);
-            when(workoutService.getWorkoutsBetween(eq(null), eq(null), eq(user)))
+            when(workoutService.getWorkoutsBetween(eq(null), eq(null), eq(registeredUser)))
                     .thenReturn(List.of(futureWorkout, ongoingWorkout, pastWorkout));
 
             mockMvc.perform(get("/api/workout/all")
@@ -126,7 +126,7 @@ public class WorkoutControllerTest {
                             && !date.isBefore(tenHoursAgo.minusMinutes(1))),
                     argThat(date -> date != null && !date.isAfter(tenHoursAfter.plusMinutes(1))
                             && !date.isBefore(tenHoursAfter.minusMinutes(1))),
-                    eq(user)))
+                    eq(registeredUser)))
                     .thenReturn(List.of(ongoingWorkout));
 
             mockMvc.perform(get("/api/workout/all")
@@ -143,7 +143,7 @@ public class WorkoutControllerTest {
                     argThat(date -> date != null && !date.isAfter(tenHoursAgo.plusMinutes(1))
                             && !date.isBefore(tenHoursAgo.minusMinutes(1))),
                     eq(null),
-                    eq(user)))
+                    eq(registeredUser)))
                     .thenReturn(List.of(futureWorkout, ongoingWorkout));
 
 
@@ -162,7 +162,7 @@ public class WorkoutControllerTest {
                     eq(null),
                     argThat(date -> date != null && !date.isAfter(tenHoursAfter.plusMinutes(1))
                             && !date.isBefore(tenHoursAfter.minusMinutes(1))),
-                    eq(user)))
+                    eq(registeredUser)))
                     .thenReturn(List.of(ongoingWorkout, pastWorkout));
 
 
@@ -182,7 +182,7 @@ public class WorkoutControllerTest {
                             && !date.isBefore(tenHoursAfter.minusMinutes(1))),
                     argThat(date -> date != null && !date.isAfter(tenHoursAgo.plusMinutes(1))
                             && !date.isBefore(tenHoursAgo.minusMinutes(1))),
-                    eq(user))).thenThrow(new InvalidWorkoutDataException("Invalid date"));
+                    eq(registeredUser))).thenThrow(new InvalidWorkoutDataException("Invalid date"));
 
 
             mockMvc.perform(get("/api/workout/all")
@@ -217,11 +217,11 @@ public class WorkoutControllerTest {
                 .name("Another workout")
                 .start(start)
                 .durationInMinutes(45)
-                .user(user)
+                .user(registeredUser)
                 .id(4L)
                 .build();
 
-        when(workoutService.addWorkout(request, user)).thenReturn(response);
+        when(workoutService.addWorkout(request, registeredUser)).thenReturn(response);
 
         RequestBuilder rb = MockMvcRequestBuilders
                 .post("/api/workout/create")
@@ -235,7 +235,7 @@ public class WorkoutControllerTest {
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.id").value(4L));
 
-        verify(workoutService, times(1)).addWorkout(request, user);
+        verify(workoutService, times(1)).addWorkout(request, registeredUser);
         verify(userService, times(1)).getCurrentUser();
     }
 
@@ -248,7 +248,7 @@ public class WorkoutControllerTest {
                 .build();
 
 
-        when(workoutService.addWorkout(eq(update), eq(user)))
+        when(workoutService.addWorkout(eq(update), eq(registeredUser)))
                 .thenThrow(new WorkoutTimeConflictException(
                         "Timing conflict detected!"
                 ));
@@ -280,7 +280,7 @@ public class WorkoutControllerTest {
                 .build();
 
 
-        when(workoutService.addWorkout(eq(w2), eq(user)))
+        when(workoutService.addWorkout(eq(w2), eq(registeredUser)))
                 .thenThrow(new InvalidWorkoutDataException("A workout must have a valid start date."));
 
         RequestBuilder rb = MockMvcRequestBuilders
@@ -317,10 +317,10 @@ public class WorkoutControllerTest {
                 .name("Updated workout")
                 .start(start)
                 .durationInMinutes(100)
-                .user(user)
+                .user(registeredUser)
                 .build();
 
-        when(workoutService.updateWorkout(eq(req), eq(user)))
+        when(workoutService.updateWorkout(eq(req), eq(registeredUser)))
                 .thenReturn(res);
 
         RequestBuilder requestBuilder = MockMvcRequestBuilders
@@ -335,7 +335,7 @@ public class WorkoutControllerTest {
                 .andExpect(jsonPath("$.name").value("Updated workout"));
 
 
-        verify(workoutService, times(1)).updateWorkout(eq(req), eq(user));
+        verify(workoutService, times(1)).updateWorkout(eq(req), eq(registeredUser));
     }
 
     @Test
@@ -348,7 +348,7 @@ public class WorkoutControllerTest {
                 .durationInMinutes(90)
                 .build();
 
-        when(workoutService.updateWorkout(updatedWorkout, user))
+        when(workoutService.updateWorkout(updatedWorkout, registeredUser))
                 .thenThrow(new WorkoutTimeConflictException("Timing conflict detected"));
 
 
@@ -379,7 +379,7 @@ public class WorkoutControllerTest {
                 .durationInMinutes(45)
                 .build();
 
-        when(workoutService.updateWorkout(eq(update), eq(user)))
+        when(workoutService.updateWorkout(eq(update), eq(registeredUser)))
                 .thenThrow(new InvalidWorkoutDataException("A workout must have a valid workout ID"));
 
         RequestBuilder rb = MockMvcRequestBuilders
@@ -415,7 +415,7 @@ public class WorkoutControllerTest {
                 .content(objectMapper.writeValueAsString(updatedWorkout))
                 .contentType(MediaType.APPLICATION_JSON);
 
-        when(workoutService.updateWorkout(eq(updatedWorkout), eq(user)))
+        when(workoutService.updateWorkout(eq(updatedWorkout), eq(registeredUser)))
                 .thenThrow(new WorkoutNotFoundException(updatedWorkout.getId()));
 
         mockMvc.perform(rb)
@@ -428,7 +428,7 @@ public class WorkoutControllerTest {
                             message);
                 });
 
-        verify(workoutService, times(1)).updateWorkout(eq(updatedWorkout), eq(user));
+        verify(workoutService, times(1)).updateWorkout(eq(updatedWorkout), eq(registeredUser));
     }
 
     @Test
@@ -436,14 +436,14 @@ public class WorkoutControllerTest {
     void deleteWorkout_ShouldReturn204NoContent() throws Exception {
         mockMvc.perform(delete("/api/workout/delete/{workoutId}", 1L))
                 .andExpect(status().isNoContent());
-        verify(workoutService, times(1)).deleteWorkout(eq(1L), eq(user));
+        verify(workoutService, times(1)).deleteWorkout(eq(1L), eq(registeredUser));
     }
 
     @Test
     @DisplayName("Delete a workout which doesn't belong to the current user")
     void deleteWorkout_ShouldReturn404NotFound() throws Exception {
         doThrow(new WorkoutNotFoundException(4L))
-                .when(workoutService).deleteWorkout(eq(4L), eq(user));
+                .when(workoutService).deleteWorkout(eq(4L), eq(registeredUser));
 
         mockMvc.perform(delete("/api/workout/delete/{workoutId}", 4L))
                 .andExpect(status().isNotFound())
@@ -454,7 +454,7 @@ public class WorkoutControllerTest {
                             message);
                 });
 
-        verify(workoutService, times(1)).deleteWorkout(eq(4L), eq(user));
+        verify(workoutService, times(1)).deleteWorkout(eq(4L), eq(registeredUser));
 
     }
 

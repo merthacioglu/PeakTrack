@@ -3,7 +3,7 @@ package org.mhacioglu.peaktrackserver.service;
 import org.mhacioglu.peaktrackserver.exceptions.InvalidWorkoutDataException;
 import org.mhacioglu.peaktrackserver.exceptions.WorkoutNotFoundException;
 import org.mhacioglu.peaktrackserver.exceptions.WorkoutTimeConflictException;
-import org.mhacioglu.peaktrackserver.model.User;
+import org.mhacioglu.peaktrackserver.model.RegisteredUser;
 import org.mhacioglu.peaktrackserver.model.Workout;
 import org.mhacioglu.peaktrackserver.model.WorkoutSummary;
 import org.mhacioglu.peaktrackserver.repository.WorkoutRepository;
@@ -26,8 +26,8 @@ public class WorkoutService {
 
 
 
-    public List<WorkoutSummary> listAllPastWorkouts(User user) {
-        List<Workout> workouts = user.getWorkouts();
+    public List<WorkoutSummary> listAllPastWorkouts(RegisteredUser registeredUser) {
+        List<Workout> workouts = registeredUser.getWorkouts();
         
         workouts = workouts.stream().
                 filter(w -> LocalDateTime.now().isAfter(w.getStart().plusMinutes(w.getDurationInMinutes())))
@@ -43,8 +43,8 @@ public class WorkoutService {
 
 
 
-    public List<Workout> getWorkoutsBetween(LocalDateTime from, LocalDateTime to, User user) {
-        List<Workout> workouts = user.getWorkouts();
+    public List<Workout> getWorkoutsBetween(LocalDateTime from, LocalDateTime to, RegisteredUser registeredUser) {
+        List<Workout> workouts = registeredUser.getWorkouts();
         if (from != null && to != null && from.isAfter(to)) {
             throw new InvalidWorkoutDataException("Beginning date cannot be after end date");
         }
@@ -62,10 +62,10 @@ public class WorkoutService {
     }
 
 
-    public Workout addWorkout(Workout workout, User user) {
-        List<Workout> workouts = user.getWorkouts();
+    public Workout addWorkout(Workout workout, RegisteredUser registeredUser) {
+        List<Workout> workouts = registeredUser.getWorkouts();
         if (checkIfWorkoutTimeIsValid(workouts, workout)) {
-            user.addWorkout(workout);
+            registeredUser.addWorkout(workout);
         }
 
         return workoutRepository.save(workout);
@@ -73,22 +73,22 @@ public class WorkoutService {
     }
 
 
-    public void deleteWorkout(Long workoutId, User user) {
-        List<Workout> workouts = user.getWorkouts();
+    public void deleteWorkout(Long workoutId, RegisteredUser registeredUser) {
+        List<Workout> workouts = registeredUser.getWorkouts();
         Workout workoutToBeDeleted = workouts.stream()
                 .filter(w -> w.getId().longValue() == workoutId)
                 .findFirst().orElseThrow(() -> new WorkoutNotFoundException(workoutId));
 
-        user.deleteWorkout(workoutToBeDeleted);
+        registeredUser.deleteWorkout(workoutToBeDeleted);
         workoutRepository.deleteById(workoutId);
     }
 
-    public Workout updateWorkout(Workout workout, User user) {
+    public Workout updateWorkout(Workout workout, RegisteredUser registeredUser) {
         if (workout.getId() == null) {
             throw new InvalidWorkoutDataException("A workout must have a valid workout id.");
         }
 
-        Optional<Workout> optionalWorkout = user.getWorkouts().stream().
+        Optional<Workout> optionalWorkout = registeredUser.getWorkouts().stream().
                 filter(w -> w.getId().longValue() == workout.getId().longValue()).findFirst();
 
         Workout existingWorkout = optionalWorkout.orElseThrow(
@@ -104,7 +104,7 @@ public class WorkoutService {
         }
 
         if (workout.getStart() != null) {
-            List<Workout> otherWorkouts = user.getWorkouts().stream()
+            List<Workout> otherWorkouts = registeredUser.getWorkouts().stream()
                     .filter(w -> w.getId().longValue() != workout.getId().longValue()).toList();
             checkIfWorkoutTimeIsValid(otherWorkouts, workout);
             existingWorkout.setStart(workout.getStart());

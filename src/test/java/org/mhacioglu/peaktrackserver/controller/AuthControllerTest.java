@@ -10,7 +10,7 @@ import org.mhacioglu.peaktrackserver.dto.LoginResponse;
 import org.mhacioglu.peaktrackserver.dto.LoginUserDto;
 import org.mhacioglu.peaktrackserver.dto.RegisterUserDto;
 import org.mhacioglu.peaktrackserver.exceptions.UsernameAlreadyExistsException;
-import org.mhacioglu.peaktrackserver.model.User;
+import org.mhacioglu.peaktrackserver.model.RegisteredUser;
 import org.mhacioglu.peaktrackserver.service.AuthenticationService;
 import org.mhacioglu.peaktrackserver.service.JwtService;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -51,7 +51,7 @@ public class AuthControllerTest {
 
     private RegisterUserDto registerUserDto;
     private LoginUserDto loginUserDto;
-    private User user;
+    private RegisteredUser registeredUser;
 
     @BeforeEach
     public void setUp() {
@@ -62,16 +62,16 @@ public class AuthControllerTest {
                 .lastName("User")
                 .email("test@example.com")
                 .age(25)
-                .gender(User.Gender.MALE)
+                .gender(RegisteredUser.Gender.MALE)
                 .weight(80)
                 .height(182)
                 .build();
 
         loginUserDto = new LoginUserDto("testuser", "password123");
 
-        user = new User();
-        user.setUsername("testuser");
-        user.setPassword("encoded_password");
+        registeredUser = new RegisteredUser();
+        registeredUser.setUsername("testuser");
+        registeredUser.setPassword("encoded_password");
 
     }
 
@@ -80,7 +80,7 @@ public class AuthControllerTest {
     @DisplayName("Create a new user with success")
     public void signup_success_ShouldReturnTheRegisteredUser() throws Exception {
 
-        when(authenticationService.signUp(registerUserDto)).thenReturn(user);
+        when(authenticationService.signUp(registerUserDto)).thenReturn(registeredUser);
 
         RequestBuilder rb = MockMvcRequestBuilders
                 .post("/auth/signup")
@@ -136,8 +136,8 @@ public class AuthControllerTest {
         expectedResponse.setToken(expectedToken);
         expectedResponse.setExpiresIn(expectedExpiration);
 
-        when(authenticationService.authenticate(loginUserDto)).thenReturn(user);
-        when(jwtService.generateToken(user)).thenReturn(expectedToken);
+        when(authenticationService.authenticate(loginUserDto)).thenReturn(registeredUser);
+        when(jwtService.generateToken(registeredUser)).thenReturn(expectedToken);
         when(jwtService.getExpirationTime()).thenReturn(expectedExpiration);
 
         RequestBuilder rb = MockMvcRequestBuilders
@@ -155,7 +155,7 @@ public class AuthControllerTest {
 
 
         verify(authenticationService, times(1)).authenticate(any(LoginUserDto.class));
-        verify(jwtService, times(1)).generateToken(any(User.class));
+        verify(jwtService, times(1)).generateToken(any(RegisteredUser.class));
         verify(jwtService, times(1)).getExpirationTime();
     }
 
@@ -187,7 +187,7 @@ public class AuthControllerTest {
                 });
 
         verify(authenticationService, times(1)).authenticate(any(LoginUserDto.class));
-        verify(jwtService, never()).generateToken(any(User.class));
+        verify(jwtService, never()).generateToken(any(RegisteredUser.class));
     }
 
     @Test

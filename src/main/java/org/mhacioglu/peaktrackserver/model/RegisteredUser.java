@@ -3,7 +3,7 @@ package org.mhacioglu.peaktrackserver.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
-import lombok.Data;
+import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -13,9 +13,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-@Data
+@Getter
+@Setter
+@EqualsAndHashCode(exclude = "workouts")
+@ToString(exclude = "workouts")
 @Entity
-public class User implements Serializable, UserDetails {
+public class RegisteredUser implements Serializable, UserDetails {
 
     @Serial
     private final static long serialVersionUID = 1L;
@@ -69,7 +72,7 @@ public class User implements Serializable, UserDetails {
             orphanRemoval = true)
     private List<Workout> workouts;
 
-    public User() {
+    public RegisteredUser() {
         this.workouts = new ArrayList<>();
 
     }

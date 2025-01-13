@@ -6,7 +6,7 @@ databaseChangeLog:
       comment: Insert initial user data
       changes:
         - insert:
-            tableName: user
+            tableName: registered_user
             columns:
               - column:
                   name: id
@@ -42,7 +42,7 @@ databaseChangeLog:
                   name: additional_notes
                   value: Prone to knee injuries; should avoid high-impact activities
         - insert:
-            tableName: user
+            tableName: registered_user
             columns:
               - column:
                   name: id
@@ -81,7 +81,7 @@ databaseChangeLog:
                   name: additional_notes
                   value: Enjoys outdoor activities; should be cautious of asthma during high pollen seasons
         - insert:
-            tableName: user
+            tableName: registered_user
             columns:
               - column:
                   name: id
@@ -120,7 +120,7 @@ databaseChangeLog:
                   name: additional_notes
                   value: Prone to hypertension; should avoid heavy lifting
         - insert:
-            tableName: user
+            tableName: registered_user
             columns:
               - column:
                   name: id
@@ -156,7 +156,7 @@ databaseChangeLog:
                   name: additional_notes
                   value: Basketball player; monitor for joint strain and overuse injuries
         - insert:
-            tableName: user
+            tableName: registered_user
             columns:
               - column:
                   name: id

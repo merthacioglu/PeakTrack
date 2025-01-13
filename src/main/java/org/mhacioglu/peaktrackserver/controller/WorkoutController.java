@@ -8,7 +8,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import org.mhacioglu.peaktrackserver.model.User;
+import org.mhacioglu.peaktrackserver.model.RegisteredUser;
 import org.mhacioglu.peaktrackserver.model.Workout;
 import org.mhacioglu.peaktrackserver.model.WorkoutSummary;
 import org.mhacioglu.peaktrackserver.service.UserService;
@@ -85,8 +85,8 @@ public class WorkoutController {
             @RequestParam(value = "to", required = false)
             @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm") LocalDateTime to) {
 
-        User user = userService.getCurrentUser();
-        List<Workout> workouts = workoutService.getWorkoutsBetween(from, to, user);
+        RegisteredUser registeredUser = userService.getCurrentUser();
+        List<Workout> workouts = workoutService.getWorkoutsBetween(from, to, registeredUser);
         return new ResponseEntity<>(workouts, HttpStatus.OK);
     }
 
@@ -127,8 +127,8 @@ public class WorkoutController {
     })
     @GetMapping(value = "/generateReport")
     public ResponseEntity<List<WorkoutSummary>> report() {
-        User currentUser = userService.getCurrentUser();
-        return new ResponseEntity<>(workoutService.listAllPastWorkouts(currentUser), HttpStatus.OK);
+        RegisteredUser currentRegisteredUser = userService.getCurrentUser();
+        return new ResponseEntity<>(workoutService.listAllPastWorkouts(currentRegisteredUser), HttpStatus.OK);
     }
 
 
@@ -176,8 +176,8 @@ public class WorkoutController {
     })
     @PostMapping(path = "/create", consumes = "application/json")
     public ResponseEntity<Workout> create(@RequestBody Workout workout) {
-        User currentUser = userService.getCurrentUser();
-        Workout newWorkout = workoutService.addWorkout(workout, currentUser);
+        RegisteredUser currentRegisteredUser = userService.getCurrentUser();
+        Workout newWorkout = workoutService.addWorkout(workout, currentRegisteredUser);
         return new ResponseEntity<>(newWorkout, HttpStatus.CREATED);
     }
 
@@ -213,8 +213,8 @@ public class WorkoutController {
     @DeleteMapping("/delete/{workoutId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable("workoutId") Long workoutId) {
-        User currentUser = userService.getCurrentUser();
-        workoutService.deleteWorkout(workoutId, currentUser);
+        RegisteredUser currentRegisteredUser = userService.getCurrentUser();
+        workoutService.deleteWorkout(workoutId, currentRegisteredUser);
     }
 
 
@@ -261,8 +261,8 @@ public class WorkoutController {
     })
     @PutMapping(value = "/update", consumes = "application/json")
     public ResponseEntity<Workout> update(@RequestBody Workout workout) {
-        User currentUser = userService.getCurrentUser();
-        return new ResponseEntity<>(workoutService.updateWorkout(workout, currentUser), HttpStatus.OK);
+        RegisteredUser currentRegisteredUser = userService.getCurrentUser();
+        return new ResponseEntity<>(workoutService.updateWorkout(workout, currentRegisteredUser), HttpStatus.OK);
     }
 
 

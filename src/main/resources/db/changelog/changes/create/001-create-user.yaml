@@ -7,10 +7,10 @@ databaseChangeLog:
         - onFail: MARK_RAN
           not:
             tableExists:
-              tableName: user
+              tableName: registered_user
       changes:
         - createTable:
-            tableName: user
+            tableName: registered_user
             columns:
               # Primary key with auto-increment
               - column:
@@ -93,4 +93,4 @@ databaseChangeLog:
       author: mert
       changes:
         - sql:
-            sql: ALTER TABLE `user` ADD CONSTRAINT age_check CHECK (age >= 10 AND age <= 80);
+            sql: ALTER TABLE `registered_user` ADD CONSTRAINT age_check CHECK (age >= 10 AND age <= 80);

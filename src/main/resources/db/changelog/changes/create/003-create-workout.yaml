@@ -41,7 +41,7 @@ databaseChangeLog:
                   constraints:
                     nullable: false
                     foreignKeyName: fk_workout_user
-                    references: user(id)
+                    references: registered_user(id)
         - createTable:
             tableName: workout_exercises
             columns:

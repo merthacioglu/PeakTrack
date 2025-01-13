@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.mhacioglu.peaktrackserver.dto.LoginResponse;
 import org.mhacioglu.peaktrackserver.dto.LoginUserDto;
 import org.mhacioglu.peaktrackserver.dto.RegisterUserDto;
-import org.mhacioglu.peaktrackserver.model.User;
+import org.mhacioglu.peaktrackserver.model.RegisteredUser;
 import org.mhacioglu.peaktrackserver.service.AuthenticationService;
 import org.mhacioglu.peaktrackserver.service.JwtService;
 import org.springframework.http.ResponseEntity;
@@ -23,16 +23,16 @@ public class AuthController {
     }
 
     @PostMapping("/signup")
-    public ResponseEntity<User> register(@RequestBody RegisterUserDto registerUserDto) {
-        User registeredUser = authService.signUp(registerUserDto);
+    public ResponseEntity<RegisteredUser> register(@RequestBody RegisterUserDto registerUserDto) {
+        RegisteredUser registeredUser = authService.signUp(registerUserDto);
         return ResponseEntity.ok(registeredUser);
     }
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> authenticate(@RequestBody LoginUserDto loginUserDto) {
-        User authenticatedUser = authService.authenticate(loginUserDto);
+        RegisteredUser authenticatedRegisteredUser = authService.authenticate(loginUserDto);
 
-        String jwtToken = jwtService.generateToken(authenticatedUser);
+        String jwtToken = jwtService.generateToken(authenticatedRegisteredUser);
 
         LoginResponse loginResponse = new LoginResponse();
         loginResponse.setToken(jwtToken);

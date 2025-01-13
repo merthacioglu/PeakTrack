@@ -4,7 +4,7 @@ import jakarta.validation.Valid;
 import org.mhacioglu.peaktrackserver.dto.LoginUserDto;
 import org.mhacioglu.peaktrackserver.dto.RegisterUserDto;
 import org.mhacioglu.peaktrackserver.exceptions.UsernameAlreadyExistsException;
-import org.mhacioglu.peaktrackserver.model.User;
+import org.mhacioglu.peaktrackserver.model.RegisteredUser;
 import org.mhacioglu.peaktrackserver.repository.UserRepository;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -29,27 +29,27 @@ public class AuthenticationService {
         this.authenticationManager = authenticationManager;
     }
 
-    public User signUp(@Valid RegisterUserDto registerUserDto) {
+    public RegisteredUser signUp(@Valid RegisterUserDto registerUserDto) {
         if (userRepository.findByUsername(registerUserDto.getUsername()).isPresent()) {
             throw new UsernameAlreadyExistsException("Username already exists");
         }
         String pass = registerUserDto.getPassword();
 
-        User user = new User();
-        user.setUsername(registerUserDto.getUsername());
-        user.setPassword(passwordEncoder.encode(pass));
-        user.setName(registerUserDto.getFirstName());
-        user.setEmail(registerUserDto.getEmail());
-        user.setLastName(registerUserDto.getLastName());
-        user.setAge(registerUserDto.getAge());
-        user.setGender(registerUserDto.getGender());
-        user.setWeight(registerUserDto.getWeight());
-        user.setHeight(registerUserDto.getHeight());
+        RegisteredUser registeredUser = new RegisteredUser();
+        registeredUser.setUsername(registerUserDto.getUsername());
+        registeredUser.setPassword(passwordEncoder.encode(pass));
+        registeredUser.setName(registerUserDto.getFirstName());
+        registeredUser.setEmail(registerUserDto.getEmail());
+        registeredUser.setLastName(registerUserDto.getLastName());
+        registeredUser.setAge(registerUserDto.getAge());
+        registeredUser.setGender(registerUserDto.getGender());
+        registeredUser.setWeight(registerUserDto.getWeight());
+        registeredUser.setHeight(registerUserDto.getHeight());
 
-        return userRepository.save(user);
+        return userRepository.save(registeredUser);
     }
 
-    public User authenticate(LoginUserDto loginUserDto) {
+    public RegisteredUser authenticate(LoginUserDto loginUserDto) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         loginUserDto.getUsername(),

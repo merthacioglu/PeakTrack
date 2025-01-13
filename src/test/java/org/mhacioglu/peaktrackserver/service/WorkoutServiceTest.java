@@ -8,7 +8,7 @@ import org.mhacioglu.peaktrackserver.exceptions.InvalidWorkoutDataException;
 import org.mhacioglu.peaktrackserver.exceptions.WorkoutNotFoundException;
 import org.mhacioglu.peaktrackserver.exceptions.WorkoutTimeConflictException;
 import org.mhacioglu.peaktrackserver.model.Exercise;
-import org.mhacioglu.peaktrackserver.model.User;
+import org.mhacioglu.peaktrackserver.model.RegisteredUser;
 import org.mhacioglu.peaktrackserver.model.Workout;
 import org.mhacioglu.peaktrackserver.model.WorkoutSummary;
 import org.mhacioglu.peaktrackserver.repository.WorkoutRepository;
@@ -26,7 +26,7 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class WorkoutServiceTest {
-    private User currentUser;
+    private RegisteredUser currentRegisteredUser;
     private Workout pastWorkout;
     private Workout futureWorkout;
     private Workout ongoingWorkout;
@@ -51,16 +51,16 @@ public class WorkoutServiceTest {
 
     @BeforeEach
     public void setup() {
-        currentUser = new User();
-        currentUser.setId(1L);
-        currentUser.setUsername("testuser");
+        currentRegisteredUser = new RegisteredUser();
+        currentRegisteredUser.setId(1L);
+        currentRegisteredUser.setUsername("testuser");
 
         pastWorkout = Workout.builder()
                 .id(1L)
                 .name("Past Workout")
                 .start(LocalDateTime.now().minusHours(2))
                 .durationInMinutes(60)
-                .user(currentUser)
+                .user(currentRegisteredUser)
                 .build();
 
         futureWorkout = Workout.builder()
@@ -68,7 +68,7 @@ public class WorkoutServiceTest {
                 .name("Upcoming Workout")
                 .start(LocalDateTime.now().plusDays(3))
                 .durationInMinutes(45)
-                .user(currentUser)
+                .user(currentRegisteredUser)
                 .build();
 
         ongoingWorkout = Workout.builder()
@@ -76,11 +76,11 @@ public class WorkoutServiceTest {
                 .name("Ongoing workout")
                 .start(LocalDateTime.now().minusMinutes(30))
                 .durationInMinutes(60)
-                .user(currentUser)
+                .user(currentRegisteredUser)
                 .build();
 
 
-        currentUser.setWorkouts(new ArrayList<>(List.of(pastWorkout, futureWorkout, ongoingWorkout)));
+        currentRegisteredUser.setWorkouts(new ArrayList<>(List.of(pastWorkout, futureWorkout, ongoingWorkout)));
 
         Exercise e1 = createTestExercise("Bench Press", "Chest exercise using weights",
                 Exercise.Category.FLEX, Exercise.MuscleGroup.ABS, 3, 1, 60);
@@ -106,28 +106,28 @@ public class WorkoutServiceTest {
     public void listAllWorkoutsBetweenDates() {
         LocalDateTime oneHourAgo = LocalDateTime.now().minusHours(1);
         LocalDateTime tenHoursLater = LocalDateTime.now().plusHours(10);
-        List<Workout> workouts = workoutService.getWorkoutsBetween(null, null, currentUser);
+        List<Workout> workouts = workoutService.getWorkoutsBetween(null, null, currentRegisteredUser);
 
         assertEquals(3, workouts.size());
         assertTrue(workouts.getFirst().getStart().isAfter(workouts.get(1).getStart()));
         assertTrue(workouts.get(1).getStart().isAfter(workouts.get(2).getStart()));
 
-        workouts = workoutService.getWorkoutsBetween(oneHourAgo, null, currentUser);
+        workouts = workoutService.getWorkoutsBetween(oneHourAgo, null, currentRegisteredUser);
 
         assertEquals(2, workouts.size());
         assertTrue(workouts.getFirst().getStart().isAfter(workouts.get(1).getStart()));
 
-        workouts = workoutService.getWorkoutsBetween(null, tenHoursLater, currentUser);
+        workouts = workoutService.getWorkoutsBetween(null, tenHoursLater, currentRegisteredUser);
 
         assertEquals(2, workouts.size());
         assertTrue(workouts.getFirst().getStart().isAfter(workouts.get(1).getStart()));
 
-        workouts = workoutService.getWorkoutsBetween(oneHourAgo, tenHoursLater, currentUser);
+        workouts = workoutService.getWorkoutsBetween(oneHourAgo, tenHoursLater, currentRegisteredUser);
         assertEquals(1, workouts.size());
         assertEquals(3L, workouts.getFirst().getId());
 
         assertThrows(InvalidWorkoutDataException.class, () ->
-                workoutService.getWorkoutsBetween(tenHoursLater, oneHourAgo, currentUser));
+                workoutService.getWorkoutsBetween(tenHoursLater, oneHourAgo, currentRegisteredUser));
 
     }
 
@@ -139,7 +139,7 @@ public class WorkoutServiceTest {
                 .name("A very old workout")
                 .start(LocalDateTime.now().minusYears(50))
                 .durationInMinutes(60)
-                .user(currentUser)
+                .user(currentRegisteredUser)
                 .build();
 
         Workout w2 = Workout.builder()
@@ -147,14 +147,14 @@ public class WorkoutServiceTest {
                 .name("A recently finished workout")
                 .start(LocalDateTime.now().minusDays(2))
                 .durationInMinutes(60)
-                .user(currentUser)
+                .user(currentRegisteredUser)
                 .build();
 
-        currentUser.addWorkout(w1);
-        currentUser.addWorkout(w2);
+        currentRegisteredUser.addWorkout(w1);
+        currentRegisteredUser.addWorkout(w2);
 
 
-        List<WorkoutSummary> pastWorkouts = workoutService.listAllPastWorkouts(currentUser);
+        List<WorkoutSummary> pastWorkouts = workoutService.listAllPastWorkouts(currentRegisteredUser);
 
         assertEquals(3, pastWorkouts.size());
         for (int i = 0; i < pastWorkouts.size() - 1; i++) {
@@ -185,27 +185,27 @@ public class WorkoutServiceTest {
                 .start(LocalDateTime.now().plusWeeks(2))
                 .durationInMinutes(80)
                 .id(4L)
-                .user(currentUser)
+                .user(currentRegisteredUser)
                 .build();
 
         when(workoutRepository.save(any(Workout.class)))
                 .thenReturn(res);
 
-        Workout newWorkout = workoutService.addWorkout(req, currentUser);
+        Workout newWorkout = workoutService.addWorkout(req, currentRegisteredUser);
         assertNotNull(newWorkout);
         assertEquals(4L, newWorkout.getId());
         assertEquals(res.getName(), newWorkout.getName());
         assertEquals(res.getStart(), newWorkout.getStart());
-        assertEquals(4, currentUser.getWorkouts().size());
+        assertEquals(4, currentRegisteredUser.getWorkouts().size());
         verify(workoutRepository, times(1)).save(any(Workout.class));
     }
 
     @Test
     @DisplayName("Delete the workout by the given ID from the database")
     public void deleteWorkout_ShouldDeleteWorkout() {
-        workoutService.deleteWorkout(pastWorkout.getId(), currentUser);
-        assertEquals(2, currentUser.getWorkouts().size());
-        assertFalse(currentUser.getWorkouts().stream()
+        workoutService.deleteWorkout(pastWorkout.getId(), currentRegisteredUser);
+        assertEquals(2, currentRegisteredUser.getWorkouts().size());
+        assertFalse(currentRegisteredUser.getWorkouts().stream()
                 .anyMatch(workout -> workout.getId().longValue() == pastWorkout.getId().longValue()));
         assertNull(pastWorkout.getUser());
         verify(workoutRepository, times(1)).deleteById(anyLong());
@@ -216,7 +216,7 @@ public class WorkoutServiceTest {
     public void deleteWorkout_ShouldReturnWorkoutNotFoundException() {
 
         assertThrows(WorkoutNotFoundException.class,
-                () -> workoutService.deleteWorkout(4L, currentUser));
+                () -> workoutService.deleteWorkout(4L, currentRegisteredUser));
 
         verify(workoutRepository, never()).deleteById(anyLong());
     }
@@ -236,13 +236,13 @@ public class WorkoutServiceTest {
                 .start(pastWorkout.getStart())
                 .exercises(pastWorkout.getExercises())
                 .durationInMinutes(req.getDurationInMinutes())
-                .user(currentUser)
+                .user(currentRegisteredUser)
                 .build();
 
         when(workoutRepository.save(any(Workout.class)))
                 .thenReturn(res);
 
-        Workout updated = workoutService.updateWorkout(req, currentUser);
+        Workout updated = workoutService.updateWorkout(req, currentRegisteredUser);
         assertNotNull(updated);
         assertEquals(res.getId(), updated.getId());
         assertEquals(res.getName(), updated.getName());
@@ -259,7 +259,7 @@ public class WorkoutServiceTest {
                 .build();
 
         assertThrows(WorkoutTimeConflictException.class,
-                () -> workoutService.addWorkout(req, currentUser));
+                () -> workoutService.addWorkout(req, currentRegisteredUser));
 
         verify(workoutRepository, never()).save(any(Workout.class));
 
@@ -273,7 +273,7 @@ public class WorkoutServiceTest {
                 .build();
 
         assertThrows(InvalidWorkoutDataException.class,
-                () -> workoutService.updateWorkout(req, currentUser));
+                () -> workoutService.updateWorkout(req, currentRegisteredUser));
 
         verify(workoutRepository, never()).save(any(Workout.class));
     }
